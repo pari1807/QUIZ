@@ -1,0 +1,167 @@
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor to add token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor to handle errors
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If access token expired, try refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem('refreshToken');
+        const response = await axios.post(`${API_URL}/auth/refresh`, {
+          refreshToken,
+        });
+
+        const { token } = response.data;
+        localStorage.setItem('token', token);
+
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+// Auth APIs
+export const authAPI = {
+  register: (data) => api.post('/auth/register', data),
+  login: (data) => api.post('/auth/login', data),
+  logout: () => api.post('/auth/logout'),
+  getMe: () => api.get('/auth/me'),
+  verifyOtp: (data) => api.post('/auth/verify-otp', data),
+  resendOtp: (data) => api.post('/auth/resend-otp', data),
+};
+
+// Admin APIs
+export const adminAPI = {
+  // Notes
+  getAllNotes: (params) => api.get('/admin/notes', { params }),
+  createNote: (formData) => api.post('/admin/notes', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  updateNote: (id, data) => api.put(`/admin/notes/${id}`, data),
+  deleteNote: (id) => api.delete(`/admin/notes/${id}`),
+  approveNote: (id) => api.post(`/admin/notes/${id}/approve`),
+  rejectNote: (id, reason) => api.post(`/admin/notes/${id}/reject`, { reason }),
+  
+  // Quizzes
+  getAllQuizzes: (params) => api.get('/admin/quizzes', { params }),
+  createQuiz: (data) => api.post('/admin/quizzes', data),
+  updateQuiz: (id, data) => api.put(`/admin/quizzes/${id}`, data),
+  deleteQuiz: (id) => api.delete(`/admin/quizzes/${id}`),
+  publishQuiz: (id) => api.post(`/admin/quizzes/${id}/publish`),
+  
+  // Classrooms
+  getAllClassrooms: () => api.get('/admin/classrooms'),
+  createClassroom: (data) => api.post('/admin/classrooms', data),
+  updateClassroom: (id, data) => api.put(`/admin/classrooms/${id}`, data),
+  deleteClassroom: (id) => api.delete(`/admin/classrooms/${id}`),
+  generateInvite: (id) => api.post(`/admin/classrooms/${id}/invite`),
+  
+  // Analytics
+  getDashboardStats: () => api.get('/admin/analytics/dashboard'),
+  getQuizPerformance: (params) => api.get('/admin/analytics/quiz-performance', { params }),
+  getNotesDownloads: () => api.get('/admin/analytics/notes-downloads'),
+  getEngagement: () => api.get('/admin/analytics/engagement'),
+  
+  // Moderation
+  muteUser: (id, duration) => api.post(`/admin/moderation/users/${id}/mute`, { duration }),
+  banUser: (id) => api.post(`/admin/moderation/users/${id}/ban`),
+  deleteMessage: (id, reason) => api.delete(`/admin/moderation/messages/${id}`, { data: { reason } }),
+  getFlaggedContent: () => api.get('/admin/moderation/flagged'),
+  
+  // Announcements
+  getAllAnnouncements: () => api.get('/admin/announcements'),
+  createAnnouncement: (data) => api.post('/admin/announcements', data),
+  
+  // Tickets
+  getAllTickets: (params) => api.get('/admin/tickets', { params }),
+  updateTicketStatus: (id, status) => api.put(`/admin/tickets/${id}/status`, { status }),
+  replyToTicket: (id, message) => api.post(`/admin/tickets/${id}/reply`, { message }),
+};
+
+// User APIs
+export const userAPI = {
+  // Notes
+  browseNotes: (params) => api.get('/notes', { params }),
+  getNoteDetails: (id) => api.get(`/notes/${id}`),
+  downloadNote: (id) => api.get(`/notes/${id}/download`),
+  rateNote: (id, rating) => api.post(`/notes/${id}/rate`, { rating }),
+  uploadNote: (formData) => api.post('/notes/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  
+  // Quizzes
+  getAvailableQuizzes: (params) => api.get('/quizzes', { params }),
+  startQuiz: (id) => api.post(`/quizzes/${id}/start`),
+  submitQuiz: (id, data) => api.post(`/quizzes/${id}/submit`, data),
+  getQuizResults: (id, attemptId) => api.get(`/quizzes/${id}/results`, { params: { attemptId } }),
+  getLeaderboard: (id) => api.get(`/quizzes/${id}/leaderboard`),
+  
+  // Discussions
+  getMessages: (classroomId, params) => api.get(`/discussions/${classroomId}`, { params }),
+  postMessage: (classroomId, formData) => api.post(`/discussions/${classroomId}`, formData),
+  replyToMessage: (messageId, content) => api.post(`/discussions/${messageId}/reply`, { content }),
+  addReaction: (messageId, emoji) => api.post(`/discussions/${messageId}/react`, { emoji }),
+  
+  // Dashboard
+  getDashboardOverview: () => api.get('/dashboard/overview'),
+  getSavedNotes: () => api.get('/dashboard/saved-notes'),
+  getQuizHistory: () => api.get('/dashboard/quiz-history'),
+  getPerformance: () => api.get('/dashboard/performance'),
+  getUpcomingEvents: () => api.get('/dashboard/events'),
+  getNotifications: (params) => api.get('/dashboard/notifications', { params }),
+  
+  // Assignments
+  getAssignments: (params) => api.get('/assignments', { params }),
+  submitAssignment: (id, formData) => api.post(`/assignments/${id}/submit`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  
+  // Profile
+  getProfile: () => api.get('/profile'),
+  updateProfile: (formData) => api.put('/profile', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  getAchievements: () => api.get('/profile/achievements'),
+  getLeaderboardGlobal: (params) => api.get('/profile/leaderboard', { params }),
+  
+  // Whiteboard
+  createWhiteboardSession: (classroomId, title) => api.post(`/whiteboard/${classroomId}/create`, { title }),
+  getWhiteboardSession: (sessionId) => api.get(`/whiteboard/${sessionId}`),
+  updateWhiteboardSession: (sessionId, snapshot) => api.put(`/whiteboard/${sessionId}`, { snapshot }),
+};
+
+export default api;

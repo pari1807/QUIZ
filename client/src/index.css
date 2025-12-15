@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #f0fdff;
+  --color-primary-100: #ccf7fe;
+  --color-primary-200: #99eefd;
+  --color-primary-300: #5de0fa;
+  --color-primary-400: #22c9f0;
+  --color-primary-500: #06aed6;
+  --color-primary-600: #088ab4;
+  --color-primary-700: #0e6e92;
+  --color-primary-800: #155a77;
+  --color-primary-900: #164b64;
+
+  --color-secondary-50: #faf5ff;
+  --color-secondary-100: #f3e8ff;
+  --color-secondary-200: #e9d5ff;
+  --color-secondary-300: #d8b4fe;
+  --color-secondary-400: #c084fc;
+  --color-secondary-500: #a855f7;
+  --color-secondary-600: #9333ea;
+  --color-secondary-700: #7e22ce;
+  --color-secondary-800: #6b21a8;
+  --color-secondary-900: #581c87;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-slate-950 text-slate-100 min-h-screen antialiased;
+}
+
+.card {
+  @apply bg-slate-900/70 rounded-xl shadow-2xl p-6 border border-slate-800 transition-all duration-300 hover:border-primary-500/70 hover:shadow-[0_0_25px_rgba(6,174,214,0.35)];
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center bg-gradient-to-r from-secondary-600 to-secondary-500 hover:from-secondary-500 hover:to-secondary-400 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 shadow-lg;
+}
+
+.input-field {
+  @apply w-full px-4 py-3 bg-slate-900/60 border-2 border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-slate-100 placeholder-slate-500 transition-all duration-200;
+}
+
+.gradient-bg {
+  @apply bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950;
+}

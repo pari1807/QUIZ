@@ -1,0 +1,522 @@
+Overview
+Building a comprehensive MERN stack educational platform with advanced admin features and engaging user experience. The platform will support role-based access control, real-time collaboration, gamification, and powerful analytics.
+
+User Review Required
+IMPORTANT
+
+Technology Stack Confirmation
+
+Backend: Node.js + Express + MongoDB
+Frontend: React (with Vite) + TailwindCSS
+Real-time: Socket.io
+File Storage: AWS S3 / Cloudinary (Please specify preference)
+AI Features: OpenAI API for summary generation (requires API key)
+Cache: Redis for performance optimization
+Please confirm or suggest alternatives for:
+
+Cloud Storage: AWS S3 or Cloudinary?
+AI Integration: Should we include AI summary generation (requires OpenAI API key)?
+Plagiarism Check: External API or basic similarity checking?
+WARNING
+
+Development Approach This is a large-scale application. We'll build it in phases:
+
+Phase 1: Core infrastructure + Basic Admin/User features
+Phase 2: Advanced features (Analytics, Whiteboard, Gamification)
+Should we proceed with Phase 1 first, or do you want the complete implementation?
+
+Proposed Changes
+Component 1: Project Structure & Configuration
+[NEW] /server/package.json
+Express, Mongoose, Socket.io, JWT, Multer, AWS-SDK/Cloudinary
+Development dependencies: Nodemon, Jest
+[NEW] /server/.env.example
+Database configuration
+JWT secrets
+Cloud storage credentials
+API keys template
+[NEW] /server/config/database.js
+MongoDB connection setup with error handling
+[NEW] /server/config/cloudStorage.js
+AWS S3 or Cloudinary configuration
+[NEW] /server/config/socket.js
+Socket.io server setup with authentication
+Component 2: Database Models
+[NEW] /server/models/User.js
+Schema: username, email, password (hashed), role (admin/teacher/student/moderator)
+Profile: avatar, bio, course, semester
+Gamification: xpPoints, badges, level
+Timestamps and soft delete support
+[NEW] /server/models/Classroom.js
+Schema: name, description, inviteCode, createdBy (admin/teacher)
+Members array with role assignments
+Settings: allowDiscussions, maxStudents
+[NEW] /server/models/Note.js
+Schema: title, description, file (URL), uploadedBy
+Categories: subject, topic, difficulty
+Metadata: downloads, ratings, summary (AI-generated)
+Status: pending/approved/rejected
+[NEW] /server/models/Quiz.js
+Schema: title, description, classroomId, createdBy
+Settings: timeLimit, shuffleQuestions, showSolutions
+Questions array (embedded or referenced)
+Status: draft/published/archived
+[NEW] /server/models/Question.js
+Schema: type (MCQ/TrueFalse/ShortAnswer), text, options
+Correct answer, explanation, difficulty, tags
+Question bank categorization
+[NEW] /server/models/QuizAttempt.js
+Schema: quizId, studentId, answers, score, timeTaken
+Auto-graded results with manual override option
+Submitted timestamp
+[NEW] /server/models/Discussion.js
+Schema: classroomId, authorId, content, parentId (for threading)
+Reactions array, mentions, attachments
+Moderation: flagged, deleted, reason
+[NEW] /server/models/Announcement.js
+Schema: title, content, targetClassrooms (broadcast option)
+Schedule: publishAt, expiresAt
+Priority level, read receipts
+[NEW] /server/models/Assignment.js
+Schema: title, description, classroomId, dueDate
+Attachments, maxScore, submissionType
+[NEW] /server/models/Submission.js
+Schema: assignmentId, studentId, files, submittedAt
+Score, feedback, status (pending/graded/late)
+[NEW] /server/models/Ticket.js
+Schema: studentId, subject, description, status
+Priority, assignedTo, messages (conversation thread)
+[NEW] /server/models/WhiteboardSession.js
+Schema: classroomId, createdBy, snapshot (drawing data)
+Active users, last modified
+[NEW] /server/models/Analytics.js
+Aggregated data: quiz performance, note downloads, user engagement
+Time-series data for graphs
+[NEW] /server/models/Notification.js
+Schema: userId, type, message, link, read status
+Component 3: Authentication & Authorization
+[NEW] /server/middleware/auth.js
+JWT token verification
+Role-based access control middleware
+Rate limiting for security
+[NEW] /server/controllers/authController.js
+Register, login, logout, refresh token
+Password reset functionality
+Email verification (optional)
+[NEW] /server/routes/auth.js
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/refresh
+POST /api/auth/logout
+POST /api/auth/forgot-password
+Component 4: File Upload Service
+[NEW] /server/middleware/upload.js
+Multer configuration with file type validation
+File size limits (configurable)
+Storage: local temp + cloud upload
+[NEW] /server/services/fileService.js
+Upload to S3/Cloudinary
+Generate secure URLs
+Delete files
+Validate file types and sizes
+Component 5: Admin APIs - Notes Management
+[NEW] /server/controllers/admin/notesController.js
+CRUD operations for notes
+Approve/reject notes
+Generate AI summaries
+Run plagiarism check
+Get note analytics
+[NEW] /server/routes/admin/notes.js
+POST /api/admin/notes - Upload note
+PUT /api/admin/notes/:id - Update note
+DELETE /api/admin/notes/:id - Delete note
+POST /api/admin/notes/:id/approve - Approve note
+POST /api/admin/notes/:id/summary - Generate AI summary
+POST /api/admin/notes/:id/plagiarism-check
+GET /api/admin/notes/analytics
+Component 6: Admin APIs - Quiz Builder
+[NEW] /server/controllers/admin/quizController.js
+Create/update/delete quizzes
+Manage question bank
+Import/export questions (CSV)
+Clone quiz templates
+Manual grading override
+[NEW] /server/routes/admin/quiz.js
+POST /api/admin/quizzes - Create quiz
+PUT /api/admin/quizzes/:id - Update quiz
+DELETE /api/admin/quizzes/:id - Delete quiz
+POST /api/admin/quizzes/:id/questions - Add questions
+POST /api/admin/quizzes/import - Import CSV
+GET /api/admin/quizzes/export/:id - Export CSV
+POST /api/admin/quizzes/:id/publish - Publish quiz
+Component 7: Admin APIs - Classroom Management
+[NEW] /server/controllers/admin/classroomController.js
+Create/update/delete classrooms
+Generate invite links
+Manage student enrollments
+Role assignment (student, moderator, TA)
+Batch operations
+[NEW] /server/routes/admin/classroom.js
+POST /api/admin/classrooms - Create classroom
+PUT /api/admin/classrooms/:id - Update classroom
+DELETE /api/admin/classrooms/:id - Delete classroom
+POST /api/admin/classrooms/:id/invite - Generate invite
+POST /api/admin/classrooms/:id/members - Add members
+PUT /api/admin/classrooms/:id/members/:userId/role - Update role
+Component 8: Admin APIs - Analytics Dashboard
+[NEW] /server/controllers/admin/analyticsController.js
+Quiz performance aggregation
+Most downloaded notes
+Student engagement metrics
+Active users report
+Flagged content tracking
+Generate charts data
+[NEW] /server/routes/admin/analytics.js
+GET /api/admin/analytics/quiz-performance - Performance graphs
+GET /api/admin/analytics/notes-downloads - Download stats
+GET /api/admin/analytics/engagement - Engagement metrics
+GET /api/admin/analytics/active-users - Active users
+GET /api/admin/analytics/flagged-content - Flagged items
+Component 9: Admin APIs - Moderation & Control
+[NEW] /server/controllers/admin/moderationController.js
+Spam detection logic
+Auto-flag suspicious content
+Mute/ban users
+Delete messages
+Review flagged content
+[NEW] /server/routes/admin/moderation.js
+POST /api/admin/moderation/users/:id/mute - Mute user
+POST /api/admin/moderation/users/:id/ban - Ban user
+DELETE /api/admin/moderation/messages/:id - Delete message
+GET /api/admin/moderation/flagged - Get flagged content
+POST /api/admin/moderation/flagged/:id/resolve - Resolve flag
+[NEW] /server/services/spamDetection.js
+Spam detection algorithms
+Content filtering
+Rate limiting
+Component 10: Admin APIs - Announcements & Support
+[NEW] /server/controllers/admin/announcementController.js
+Create/update/delete announcements
+Broadcast to all classrooms
+Schedule future announcements
+Track read receipts
+[NEW] /server/routes/admin/announcements.js
+POST /api/admin/announcements - Create announcement
+PUT /api/admin/announcements/:id - Update announcement
+DELETE /api/admin/announcements/:id - Delete announcement
+POST /api/admin/announcements/:id/broadcast - Broadcast
+[NEW] /server/controllers/admin/ticketController.js
+View all tickets
+Update ticket status
+Assign tickets
+Reply to tickets
+[NEW] /server/routes/admin/tickets.js
+GET /api/admin/tickets - List all tickets
+PUT /api/admin/tickets/:id/status - Update status
+POST /api/admin/tickets/:id/reply - Reply to ticket
+Component 11: User APIs - Smart Notes System
+[NEW] /server/controllers/user/notesController.js
+Browse notes with filters
+Search by tags/subject
+Preview notes
+Download notes (track)
+Rate notes
+Save favorite notes
+[NEW] /server/routes/user/notes.js
+GET /api/notes - Browse notes (with filters)
+GET /api/notes/:id - Get note details
+GET /api/notes/:id/download - Download note
+POST /api/notes/:id/rate - Rate note
+POST /api/notes/:id/save - Save to favorites
+Component 12: User APIs - Quiz System
+[NEW] /server/controllers/user/quizController.js
+Get available quizzes
+Start quiz attempt
+Submit quiz answers
+Get results with solutions
+View leaderboard
+[NEW] /server/routes/user/quiz.js
+GET /api/quizzes - List available quizzes
+POST /api/quizzes/:id/start - Start quiz
+POST /api/quizzes/:id/submit - Submit answers
+GET /api/quizzes/:id/results - Get results
+GET /api/quizzes/:id/leaderboard - Get leaderboard
+Component 13: User APIs - Real-Time Discussions
+[NEW] /server/controllers/user/discussionController.js
+Get discussion messages
+Post new message
+Reply to thread
+Add reactions
+Mention users
+Report content
+[NEW] /server/routes/user/discussions.js
+GET /api/discussions/:classroomId - Get messages
+POST /api/discussions/:classroomId - Post message
+POST /api/discussions/:messageId/reply - Reply
+POST /api/discussions/:messageId/react - Add reaction
+POST /api/discussions/:messageId/report - Report
+[NEW] /server/sockets/discussionSocket.js
+Real-time message broadcasting
+Typing indicators
+User presence tracking
+Component 14: User APIs - Personal Dashboard & Assignments
+[NEW] /server/controllers/user/dashboardController.js
+Get saved notes
+Get quiz history
+Performance analytics
+Upcoming events
+Notifications
+[NEW] /server/routes/user/dashboard.js
+GET /api/dashboard/saved-notes - Saved notes
+GET /api/dashboard/quiz-history - Quiz history
+GET /api/dashboard/performance - Performance stats
+GET /api/dashboard/events - Upcoming events
+[NEW] /server/controllers/user/assignmentController.js
+Get assignments
+Submit assignment
+View grades and feedback
+[NEW] /server/routes/user/assignments.js
+GET /api/assignments - List assignments
+POST /api/assignments/:id/submit - Submit assignment
+GET /api/assignments/:id/submission - Get submission status
+Component 15: Collaborative Whiteboard
+[NEW] /server/controllers/whiteboardController.js
+Create whiteboard session
+Get session data
+Update drawing data
+[NEW] /server/sockets/whiteboardSocket.js
+Real-time drawing synchronization
+Multi-user cursor tracking
+Save/load drawing state
+[NEW] /server/routes/whiteboard.js
+POST /api/whiteboard/:classroomId/create - Create session
+GET /api/whiteboard/:sessionId - Get session
+PUT /api/whiteboard/:sessionId - Update session
+Component 16: Gamification System
+[NEW] /server/services/gamificationService.js
+Award XP points for activities
+Unlock badges
+Calculate levels
+Weekly leaderboard
+[NEW] /server/controllers/user/profileController.js
+Update profile
+View badges and achievements
+Notification preferences
+[NEW] /server/routes/user/profile.js
+GET /api/profile - Get profile
+PUT /api/profile - Update profile
+GET /api/profile/achievements - Get badges
+PUT /api/profile/notifications - Update preferences
+Component 17: Frontend - React Application Setup
+[NEW] /client/package.json
+React, React Router, Axios, Socket.io-client
+State management: Redux Toolkit / Zustand
+UI: TailwindCSS, Headless UI, React Icons
+Charts: Recharts / Chart.js
+Whiteboard: Fabric.js / Excalidraw
+[NEW] /client/vite.config.js
+Vite configuration
+Proxy setup for API calls
+[NEW] /client/tailwind.config.js
+Custom theme configuration
+Premium color palette
+Typography setup
+Component 18: Frontend - Core Structure
+[NEW] /client/src/App.jsx
+Main app component
+Routing setup
+Auth context provider
+[NEW] /client/src/routes/index.jsx
+Protected routes
+Role-based routing
+Layout components
+[NEW] /client/src/contexts/AuthContext.jsx
+Authentication state management
+Login/logout functions
+Token management
+[NEW] /client/src/services/api.js
+Axios instance configuration
+API endpoints
+Error handling
+[NEW] /client/src/services/socket.js
+Socket.io client setup
+Event handlers
+Component 19: Frontend - Admin Dashboard
+[NEW] /client/src/pages/admin/Dashboard.jsx
+Analytics overview
+Quick actions
+Recent activity
+[NEW] /client/src/pages/admin/NotesManagement.jsx
+Notes CRUD interface
+Categorization UI
+Approval workflow
+[NEW] /client/src/pages/admin/QuizBuilder.jsx
+Quiz creation form
+Question bank interface
+Import/export UI
+[NEW] /client/src/pages/admin/ClassroomManagement.jsx
+Classroom CRUD
+Invite link generation
+Member management
+[NEW] /client/src/pages/admin/Analytics.jsx
+Performance charts (Recharts)
+Download statistics
+Engagement metrics
+[NEW] /client/src/pages/admin/Moderation.jsx
+Flagged content review
+User management actions
+Message moderation
+[NEW] /client/src/pages/admin/Announcements.jsx
+Announcement creation
+Scheduling interface
+Broadcast controls
+[NEW] /client/src/pages/admin/TicketSupport.jsx
+Ticket list with filters
+Ticket details & conversation
+Status management
+Component 20: Frontend - User Interface
+[NEW] /client/src/pages/user/Dashboard.jsx
+Personal stats overview
+Saved notes grid
+Quiz history
+Upcoming events
+[NEW] /client/src/pages/user/Notes.jsx
+Notes browsing with filters
+Search functionality
+Preview modal
+Download & rating
+[NEW] /client/src/pages/user/Quiz/QuizList.jsx
+Available quizzes display
+Live vs Practice tabs
+Leaderboard preview
+[NEW] /client/src/pages/user/Quiz/QuizTaking.jsx
+Timer countdown
+Question navigation
+Auto-save answers
+Submit confirmation
+[NEW] /client/src/pages/user/Quiz/QuizResults.jsx
+Score display
+Detailed solutions
+Performance analysis
+[NEW] /client/src/pages/user/Discussions.jsx
+Chat room interface
+Threaded replies
+Mention autocomplete
+Emoji reactions
+[NEW] /client/src/pages/user/Whiteboard.jsx
+Canvas drawing interface
+Toolbar (pen, eraser, shapes)
+Multi-user cursors
+Save/clear controls
+[NEW] /client/src/pages/user/Assignments.jsx
+Assignment list
+Upload interface
+Deadline tracking
+Submission history
+[NEW] /client/src/pages/user/Profile.jsx
+Profile editing
+Avatar upload
+Badges display
+XP progress bar
+Notification settings
+Component 21: Frontend - Shared Components
+[NEW] /client/src/components/Navbar.jsx
+Role-based navigation
+User menu dropdown
+Notifications bell
+[NEW] /client/src/components/Sidebar.jsx
+Navigation menu
+Active classroom selector
+[NEW] /client/src/components/NotificationCenter.jsx
+Real-time notifications
+Mark as read
+Notification types
+[NEW] /client/src/components/Leaderboard.jsx
+Ranking display
+User highlights
+Weekly/all-time toggle
+[NEW] /client/src/components/FileUploader.jsx
+Drag-and-drop
+Progress indicator
+File type validation
+[NEW] /client/src/components/RichTextEditor.jsx
+For announcements, discussions
+Markdown support
+[NEW] /client/src/components/charts/*
+LineChart, BarChart, PieChart components
+Reusable chart wrappers
+Verification Plan
+Automated Tests
+Backend API Tests (Jest + Supertest)
+
+npm test --prefix server
+Authentication flow tests
+CRUD operations for all models
+Role-based access control
+File upload validation
+Quiz grading accuracy
+Gamification point calculation
+Frontend Tests (Vitest + React Testing Library)
+
+npm test --prefix client
+Component rendering tests
+User interaction flows
+API integration tests
+State management tests
+Manual Verification
+Authentication System
+
+Register users with different roles
+Login/logout functionality
+Token refresh mechanism
+Admin Features
+
+Create classrooms and generate invite links
+Upload and categorize notes
+Build quizzes with different question types
+Review analytics dashboard
+Moderate discussions and ban users
+Create scheduled announcements
+User Features
+
+Browse and download notes
+Take quizzes and view results
+Participate in discussions with reactions
+Submit assignments
+Use collaborative whiteboard
+Check gamification progress
+Real-time Features
+
+Multiple users in discussion room
+Whiteboard collaboration with 2+ users
+Typing indicators
+Real-time notifications
+Performance
+
+Load testing with 100+ concurrent users
+File upload/download speed
+Real-time latency measurement
+Security Audit
+
+JWT token validation
+SQL injection prevention
+XSS protection
+CORS configuration
+Rate limiting effectiveness
+Deployment Configuration
+[NEW] /server/Dockerfile
+Node.js production image
+Environment variables
+Port exposure
+[NEW] /client/Dockerfile
+Nginx static file serving
+React production build
+[NEW] /docker-compose.yml
+MongoDB service
+Redis service
+Backend service
+Frontend service
+Network configuration
+[NEW] /.github/workflows/ci-cd.yml (optional)
+Automated testing
+Build and deploy pipeline

@@ -1,0 +1,161 @@
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+
+const stats = [
+  { label: 'Total Students', value: '1,248', sub: '+120 this month' },
+  { label: 'Active Quizzes', value: '32', sub: '5 live right now' },
+  { label: 'Pending Notes', value: '18', sub: 'Awaiting review' },
+  { label: 'Open Tickets', value: '7', sub: 'Support queue' },
+];
+
+const quickLinks = [
+  { to: '/admin/notes', label: 'Review Notes', desc: 'Approve, reject, and manage notes', badge: 'Notes' },
+  { to: '/admin/quizzes', label: 'Build a Quiz', desc: 'Create or edit quiz templates', badge: 'Quizzes' },
+  { to: '/admin/classrooms', label: 'Manage Classrooms', desc: 'Invite students & assign roles', badge: 'Classrooms' },
+  { to: '/admin/analytics', label: 'View Analytics', desc: 'Track performance & engagement', badge: 'Analytics' },
+];
+
+const Dashboard = () => {
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-400 mb-1">Admin Overview</p>
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-50">
+            Control center for your learning community
+          </h1>
+          <p className="text-sm text-slate-400 mt-2 max-w-xl">
+            Monitor quizzes, notes, classrooms, and student activity from a single, focused dashboard.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Link
+            to="/admin/quizzes"
+            className="btn-primary text-xs md:text-sm"
+          >
+            Create Quiz
+          </Link>
+          <Link
+            to="/admin/announcements"
+            className="btn-secondary text-xs md:text-sm"
+          >
+            New Announcement
+          </Link>
+        </div>
+      </div>
+
+      {/* Stat cards */}
+      <motion.div
+        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: {
+            transition: { staggerChildren: 0.06 },
+          },
+        }}
+      >
+        {stats.map((item) => (
+          <motion.div
+            key={item.label}
+            variants={{
+              hidden: { opacity: 0, y: 16 },
+              visible: { opacity: 1, y: 0 },
+            }}
+            className="card flex flex-col justify-between"
+          >
+            <div>
+              <p className="text-xs text-slate-400 mb-1">{item.label}</p>
+              <p className="text-2xl font-semibold text-slate-50">{item.value}</p>
+            </div>
+            <p className="text-xs text-primary-300 mt-3">{item.sub}</p>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Quick actions */}
+        <motion.div
+          className="xl:col-span-2 card"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.35 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-50">Quick admin actions</h2>
+              <p className="text-xs text-slate-400">Jump directly into the most important workflows.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            {quickLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="group relative rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-4 flex flex-col gap-1 hover:border-primary-500/70 hover:shadow-[0_0_20px_rgba(6,174,214,0.35)] transition-all duration-200"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-primary-200 bg-primary-500/10 px-2 py-0.5 rounded-full">
+                    {link.badge}
+                  </span>
+                  <span className="text-[11px] text-slate-400 group-hover:text-primary-200 transition-colors">
+                    Open →
+                  </span>
+                </div>
+                <p className="text-sm font-semibold text-slate-50">{link.label}</p>
+                <p className="text-xs text-slate-400">{link.desc}</p>
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Right column: activity & alerts */}
+        <motion.div
+          className="space-y-4"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.35 }}
+        >
+          <div className="card">
+            <h2 className="text-sm font-semibold text-slate-50 mb-3">Today&apos;s signal</h2>
+            <ul className="space-y-2 text-xs text-slate-300">
+              <li className="flex items-start gap-2">
+                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span>Quiz completion rate is <span className="text-emerald-300 font-medium">+12% higher</span> than yesterday.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
+                <span>18 notes are waiting for moderation in the review queue.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sky-400" />
+                <span>2 live quizzes are close to their end time.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="card">
+            <h2 className="text-sm font-semibold text-slate-50 mb-3">Moderation queue</h2>
+            <ul className="space-y-2 text-xs text-slate-300">
+              <li className="flex items-center justify-between">
+                <span>Flagged messages</span>
+                <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-300 text-[11px]">5 pending</span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span>Reported users</span>
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 text-[11px]">2 under review</span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span>Spam detection</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 text-[11px]">Healthy</span>
+              </li>
+            </ul>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
