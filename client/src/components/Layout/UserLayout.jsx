@@ -15,11 +15,20 @@ const userLinks = [
 const UserLayout = () => {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const viewMode = useAuthStore((s) => s.viewMode);
+  const setViewMode = useAuthStore((s) => s.setViewMode);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  const isElevated = user?.role === 'admin' || user?.role === 'teacher' || user?.isAdmin;
+
+  const handleSwitchToAdmin = () => {
+    setViewMode('admin');
+    navigate('/admin');
   };
 
   return (
@@ -55,6 +64,14 @@ const UserLayout = () => {
             <p className="text-sm font-medium capitalize">{user?.role || 'student'}</p>
           </div>
           <div className="flex items-center gap-2">
+            {isElevated && viewMode === 'user' && (
+              <button
+                onClick={handleSwitchToAdmin}
+                className="hidden md:inline-flex text-xs md:text-sm px-3 py-1.5 rounded-lg border border-slate-700 hover:border-primary-500/70 hover:text-primary-200 transition-colors"
+              >
+                Switch to Admin View
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="text-xs md:text-sm px-3 py-1.5 rounded-lg border border-rose-600/80 text-rose-200 hover:bg-rose-600/10 transition-colors"

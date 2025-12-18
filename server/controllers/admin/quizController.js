@@ -5,6 +5,7 @@ import QuizAttempt from '../../models/QuizAttempt.js';
 import { createObjectCsvWriter } from 'csv-writer';
 import csv from 'csv-parser';
 import fs from 'fs';
+import fileService from '../../services/fileService.js';
 
 // @desc    Create quiz
 // @route   POST /api/admin/quizzes
@@ -26,6 +27,63 @@ export const createQuiz = async (req, res) => {
     const quiz = await Quiz.create(payload);
 
     res.status(201).json(quiz);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getQuizDetails = async (req, res) => {
+  try {
+    const quiz = await Quiz.findById(req.params.id)
+      .populate('classroom', 'name')
+      .populate('createdBy', 'username')
+      .populate('questions');
+
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    res.json(quiz);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateQuestion = async (req, res) => {
+  try {
+    const question = await Question.findById(req.params.id);
+
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    Object.assign(question, req.body);
+    await question.save();
+
+    res.json(question);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const addAttachment = async (req, res) => {
+  try {
+    const quiz = await Quiz.findById(req.params.id);
+
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'Please upload a file' });
+    }
+
+    const fileData = await fileService.uploadFile(req.file, 'quizzes');
+    quiz.attachments = quiz.attachments || [];
+    quiz.attachments.push(fileData);
+    await quiz.save();
+
+    res.json(quiz);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

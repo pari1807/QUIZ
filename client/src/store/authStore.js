@@ -2,11 +2,20 @@ import { create } from 'zustand';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
+const isElevatedUser = (u) => u?.role === 'admin' || u?.role === 'teacher' || u?.isAdmin;
+
 const useAuthStore = create((set, get) => ({
   user: null,
   token: localStorage.getItem('token'),
+  viewMode: localStorage.getItem('viewMode') || 'user',
   loading: false,
   isAuthenticated: !!localStorage.getItem('token'),
+
+  setViewMode: (mode) => {
+    const nextMode = mode === 'admin' ? 'admin' : 'user';
+    localStorage.setItem('viewMode', nextMode);
+    set({ viewMode: nextMode });
+  },
 
   login: async (credentials) => {
     try {
@@ -17,7 +26,11 @@ const useAuthStore = create((set, get) => ({
       localStorage.setItem('token', token);
       localStorage.setItem('refreshToken', refreshToken);
 
-      set({ user, token, isAuthenticated: true, loading: false });
+      const existingViewMode = localStorage.getItem('viewMode');
+      const nextViewMode = existingViewMode || (isElevatedUser(user) ? 'admin' : 'user');
+      localStorage.setItem('viewMode', nextViewMode);
+
+      set({ user, token, isAuthenticated: true, loading: false, viewMode: nextViewMode });
       toast.success(`Welcome back, ${user.username}!`);
       
       return response.data;
@@ -64,7 +77,11 @@ const useAuthStore = create((set, get) => ({
       localStorage.setItem('token', token);
       localStorage.setItem('refreshToken', refreshToken);
 
-      set({ user, token, isAuthenticated: true, loading: false });
+      const existingViewMode = localStorage.getItem('viewMode');
+      const nextViewMode = existingViewMode || (isElevatedUser(user) ? 'admin' : 'user');
+      localStorage.setItem('viewMode', nextViewMode);
+
+      set({ user, token, isAuthenticated: true, loading: false, viewMode: nextViewMode });
       toast.success(response.data?.message || 'Email verified successfully');
 
       return response.data;
@@ -97,7 +114,8 @@ const useAuthStore = create((set, get) => ({
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
-      set({ user: null, token: null, isAuthenticated: false });
+      localStorage.removeItem('viewMode');
+      set({ user: null, token: null, isAuthenticated: false, viewMode: 'user' });
       toast.success('Logged out successfully');
     }
   },
@@ -107,7 +125,12 @@ const useAuthStore = create((set, get) => ({
 
     try {
       const response = await authAPI.getMe();
-      set({ user: response.data, isAuthenticated: true });
+      const currentMode = get().viewMode;
+      const nextMode = isElevatedUser(response.data) ? currentMode : 'user';
+      if (nextMode !== currentMode) {
+        localStorage.setItem('viewMode', nextMode);
+      }
+      set({ user: response.data, isAuthenticated: true, viewMode: nextMode });
     } catch (error) {
       console.error('Fetch user error:', error);
       get().logout();

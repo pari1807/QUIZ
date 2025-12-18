@@ -104,6 +104,7 @@ export const startQuiz = async (req, res) => {
         description: quiz.description,
         timeLimit: quiz.settings.timeLimit,
         totalMarks: quiz.totalMarks,
+        attachments: quiz.attachments || [],
       },
       questions: questionsForClient,
       startedAt: attempt.startedAt,
@@ -234,9 +235,6 @@ export const getQuizResults = async (req, res) => {
       return res.status(404).json({ message: 'Quiz attempt not found' });
     }
 
-    // Include solutions if allowed
-    const showSolutions = attempt.quiz.settings.showSolutions;
-
     const results = {
       quiz: {
         title: attempt.quiz.title,
@@ -249,23 +247,6 @@ export const getQuizResults = async (req, res) => {
       status: attempt.status,
       feedback: attempt.feedback,
     };
-
-    if (showSolutions) {
-      results.answers = attempt.answers.map((answer) => {
-        const question = attempt.quiz.questions.find(
-          (q) => q._id.toString() === answer.question.toString()
-        );
-
-        return {
-          questionText: question?.text,
-          selectedAnswer: answer.selectedAnswer,
-          correctAnswer: question?.correctAnswer,
-          isCorrect: answer.isCorrect,
-          marksAwarded: answer.marksAwarded,
-          explanation: question?.explanation,
-        };
-      });
-    }
 
     res.json(results);
   } catch (error) {

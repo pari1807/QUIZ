@@ -15,11 +15,17 @@ const adminLinks = [
 const AdminLayout = () => {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const setViewMode = useAuthStore((s) => s.setViewMode);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  const handleSwitchToUser = () => {
+    setViewMode('user');
+    navigate('/dashboard');
   };
 
   return (
@@ -58,7 +64,10 @@ const AdminLayout = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="hidden md:inline-flex text-xs md:text-sm px-3 py-1.5 rounded-lg border border-slate-700 hover:border-primary-500/70 hover:text-primary-200 transition-colors">
+            <button
+              onClick={handleSwitchToUser}
+              className="hidden md:inline-flex text-xs md:text-sm px-3 py-1.5 rounded-lg border border-slate-700 hover:border-primary-500/70 hover:text-primary-200 transition-colors"
+            >
               Switch to User View
             </button>
             <button

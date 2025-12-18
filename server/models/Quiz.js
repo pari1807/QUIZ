@@ -26,6 +26,15 @@ const quizSchema = new mongoose.Schema(
         ref: 'Question',
       },
     ],
+    attachments: [
+      {
+        url: String,
+        publicId: String,
+        fileName: String,
+        fileSize: Number,
+        fileType: String,
+      },
+    ],
     // Settings
     settings: {
       timeLimit: {

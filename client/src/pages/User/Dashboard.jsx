@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { userAPI } from '../../services/api';
 
 const savedNotes = [
   { title: 'DSA – Graphs Cheatsheet', subject: 'Data Structures', rating: 4.8 },
@@ -12,6 +14,37 @@ const recentQuizzes = [
 ];
 
 const Dashboard = () => {
+  const [availableQuizzes, setAvailableQuizzes] = useState([]);
+  const [loadingQuizzes, setLoadingQuizzes] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      try {
+        const res = await userAPI.getAvailableQuizzes();
+        if (!mounted) return;
+        setAvailableQuizzes(res.data || []);
+      } finally {
+        if (mounted) setLoadingQuizzes(false);
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+      const now = new Date().toISOString();
+      localStorage.setItem('lastQuizSeenAt', now);
+    };
+  }, []);
+
+  const newQuizCount = useMemo(() => {
+    const lastSeen = localStorage.getItem('lastQuizSeenAt');
+    if (!lastSeen) return 0;
+    const last = new Date(lastSeen).getTime();
+    return (availableQuizzes || []).filter((q) => new Date(q.createdAt).getTime() > last).length;
+  }, [availableQuizzes]);
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -64,7 +97,9 @@ const Dashboard = () => {
             <p className="text-xs text-slate-400 mb-1">Weekly streak</p>
             <p className="text-2xl font-semibold text-slate-50">5 days</p>
           </div>
-          <p className="text-xs text-primary-300 mt-2">Keep it up to unlock bonus XP this week.</p>
+          <p className="text-xs text-primary-300 mt-2">
+            {loadingQuizzes ? 'Checking new quizzes...' : `${newQuizCount} new quizzes added`}
+          </p>
         </div>
       </motion.div>
 

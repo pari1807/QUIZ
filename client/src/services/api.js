@@ -79,9 +79,16 @@ export const adminAPI = {
   // Quizzes
   getAllQuizzes: (params) => api.get('/admin/quizzes', { params }),
   createQuiz: (data) => api.post('/admin/quizzes', data),
+  getQuizDetails: (id) => api.get(`/admin/quizzes/${id}`),
   updateQuiz: (id, data) => api.put(`/admin/quizzes/${id}`, data),
   deleteQuiz: (id) => api.delete(`/admin/quizzes/${id}`),
   publishQuiz: (id) => api.post(`/admin/quizzes/${id}/publish`),
+  addQuizQuestions: (id, data) => api.post(`/admin/quizzes/${id}/questions`, data),
+  updateQuizQuestion: (questionId, data) => api.put(`/admin/quizzes/questions/${questionId}`, data),
+  uploadQuizAttachment: (id, formData) =>
+    api.post(`/admin/quizzes/${id}/attachments`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   
   // Classrooms
   getAllClassrooms: () => api.get('/admin/classrooms'),

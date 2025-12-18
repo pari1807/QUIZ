@@ -33,7 +33,7 @@ import AdminLayout from './components/Layout/AdminLayout';
 import UserLayout from './components/Layout/UserLayout';
 
 function App() {
-  const { isAuthenticated, token, fetchUser, user } = useAuthStore();
+  const { isAuthenticated, token, fetchUser, user, viewMode } = useAuthStore();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -59,7 +59,9 @@ function App() {
               <Navigate
                 to={
                   user?.role === 'admin' || user?.role === 'teacher' || user?.isAdmin
-                    ? '/admin'
+                    ? viewMode === 'user'
+                      ? '/dashboard'
+                      : '/admin'
                     : '/dashboard'
                 }
               />
@@ -75,7 +77,9 @@ function App() {
               <Navigate
                 to={
                   user?.role === 'admin' || user?.role === 'teacher' || user?.isAdmin
-                    ? '/admin'
+                    ? viewMode === 'user'
+                      ? '/dashboard'
+                      : '/admin'
                     : '/dashboard'
                 }
               />
@@ -91,7 +95,9 @@ function App() {
               <Navigate
                 to={
                   user?.role === 'admin' || user?.role === 'teacher' || user?.isAdmin
-                    ? '/admin'
+                    ? viewMode === 'user'
+                      ? '/dashboard'
+                      : '/admin'
                     : '/dashboard'
                 }
               />
@@ -99,12 +105,12 @@ function App() {
           }
         />
 
-        {/* User Routes inside UserLayout (only for non-admin/teacher) */}
+        {/* User Routes inside UserLayout */}
         <Route
           path="/"
           element={
-            isAuthenticated && (user?.role === 'admin' || user?.role === 'teacher' || user?.isAdmin) ? (
-              <Navigate to="/admin" />
+            isAuthenticated && (user?.role === 'admin' || user?.role === 'teacher' || user?.isAdmin) && viewMode === 'admin' ? (
+              <Navigate to="/admin" replace />
             ) : (
               <ProtectedRoute>
                 <UserLayout />
@@ -148,7 +154,9 @@ function App() {
               to={
                 isAuthenticated
                   ? user?.role === 'admin' || user?.role === 'teacher' || user?.isAdmin
-                    ? '/admin'
+                    ? viewMode === 'user'
+                      ? '/dashboard'
+                      : '/admin'
                     : '/dashboard'
                   : '/login'
               }
