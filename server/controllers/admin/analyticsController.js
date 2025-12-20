@@ -66,6 +66,115 @@ export const getQuizPerformance = async (req, res) => {
   }
 };
 
+// @desc    Get per-user quiz performance summary for admin
+// @route   GET /api/admin/analytics/user-performance
+// @access  Private/Admin
+export const getUserQuizPerformanceSummary = async (req, res) => {
+  try {
+    const { search } = req.query;
+
+    const matchStage = { status: 'graded' };
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $group: {
+          _id: '$student',
+          attemptsCount: { $sum: 1 },
+          avgPercentage: { $avg: '$percentage' },
+          bestPercentage: { $max: '$percentage' },
+          lastAttemptAt: { $max: '$submittedAt' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: '$user' },
+      {
+        $project: {
+          _id: 0,
+          userId: '$user._id',
+          username: '$user.username',
+          email: '$user.email',
+          avatar: '$user.avatar',
+          attemptsCount: 1,
+          avgPercentage: { $round: ['$avgPercentage', 2] },
+          bestPercentage: { $round: ['$bestPercentage', 2] },
+          lastAttemptAt: 1,
+        },
+      },
+      { $sort: { avgPercentage: -1 } },
+    ];
+
+    let users = await QuizAttempt.aggregate(pipeline);
+
+    if (search) {
+      const s = search.toLowerCase();
+      users = users.filter(
+        (u) =>
+          u.username?.toLowerCase().includes(s) ||
+          u.email?.toLowerCase().includes(s)
+      );
+    }
+
+    res.json({ users });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get detailed quiz performance for a single user
+// @route   GET /api/admin/analytics/user-performance/:userId
+// @access  Private/Admin
+export const getUserQuizPerformanceDetail = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).select(
+      'username email avatar course semester xpPoints level'
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const attempts = await QuizAttempt.find({
+      student: userId,
+      status: 'graded',
+    })
+      .populate('quiz', 'title subject totalMarks')
+      .sort({ submittedAt: -1 });
+
+    const summary = {
+      totalAttempts: attempts.length,
+      avgPercentage:
+        attempts.length === 0
+          ? 0
+          : Number(
+              (
+                attempts.reduce((acc, a) => acc + (a.percentage || 0), 0) /
+                attempts.length
+              ).toFixed(2)
+            ),
+      bestPercentage:
+        attempts.length === 0
+          ? 0
+          : Math.max(...attempts.map((a) => a.percentage || 0)),
+      lastAttemptAt:
+        attempts.length === 0 ? null : attempts[0].submittedAt || attempts[0].createdAt,
+    };
+
+    res.json({ user, summary, attempts });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Get notes download statistics
 // @route   GET /api/admin/analytics/notes-downloads
 // @access  Private/Admin
@@ -246,12 +355,12 @@ export const getDashboardStats = async (req, res) => {
       $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
     });
 
+    // Count all quizzes that are currently published (non-deleted)
+    // so the dashboard "active quizzes" metric reflects how many
+    // quizzes admin has kept active, regardless of type/schedule.
     const activeQuizzesNow = await Quiz.countDocuments({
       ...notDeletedQuery,
       status: 'published',
-      type: 'live',
-      startTime: { $lte: now },
-      endTime: { $gte: now },
     });
 
     const pendingNotes = await Note.countDocuments({

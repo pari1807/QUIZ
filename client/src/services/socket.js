@@ -46,6 +46,15 @@ class SocketService {
     this.socket?.emit('leaveClassroom', classroomId);
   }
 
+  // Group discussions
+  joinGroup(groupId) {
+    this.socket?.emit('joinGroup', groupId);
+  }
+
+  leaveGroup(groupId) {
+    this.socket?.emit('leaveGroup', groupId);
+  }
+
   sendTyping(classroomId, username) {
     this.socket?.emit('typing', { classroomId, username });
   }
@@ -56,6 +65,10 @@ class SocketService {
 
   onNewMessage(callback) {
     this.socket?.on('newMessage', callback);
+  }
+
+  onNewGroupMessage(callback) {
+    this.socket?.on('newGroupMessage', callback);
   }
 
   onNewReply(callback) {

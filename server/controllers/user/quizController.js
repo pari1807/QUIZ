@@ -269,6 +269,25 @@ export const getQuizResults = async (req, res) => {
       return res.status(404).json({ message: 'Quiz attempt not found' });
     }
 
+    // Fetch all attempts for this quiz by the same user to build history
+    const allAttempts = await QuizAttempt.find({
+      quiz: attempt.quiz._id,
+      student: req.user._id,
+      status: { $in: ['submitted', 'graded'] },
+    })
+      .sort({ submittedAt: 1 });
+
+    const attemptsHistory = allAttempts.map((a, index) => ({
+      attemptNumber: index + 1,
+      attemptId: a._id,
+      score: a.score,
+      maxScore: a.maxScore,
+      percentage: a.percentage,
+      timeTaken: a.timeTaken,
+      submittedAt: a.submittedAt,
+      isCurrent: a._id.toString() === attempt._id.toString(),
+    }));
+
     const results = {
       quiz: {
         title: attempt.quiz.title,
@@ -280,6 +299,7 @@ export const getQuizResults = async (req, res) => {
       submittedAt: attempt.submittedAt,
       status: attempt.status,
       feedback: attempt.feedback,
+      attemptsHistory,
     };
 
     res.json(results);

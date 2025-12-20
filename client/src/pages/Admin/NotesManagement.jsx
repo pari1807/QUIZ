@@ -13,7 +13,7 @@ const NotesManagement = () => {
     description: '',
     subject: '',
     topic: '',
-    difficulty: 'easy',
+    difficulty: 'beginner',
     classroom: '',
     tags: '',
     file: null,
@@ -159,9 +159,9 @@ const NotesManagement = () => {
               onChange={handleChange}
               className="input-field"
             >
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
             </select>
           </div>
           <div className="space-y-1">

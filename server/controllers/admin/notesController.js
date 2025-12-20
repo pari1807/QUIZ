@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Note from '../../models/Note.js';
 import fileService from '../../services/fileService.js';
 
@@ -15,7 +16,7 @@ export const createNote = async (req, res) => {
     // Upload file to cloudinary
     const fileData = await fileService.uploadFile(req.file, 'notes');
 
-    const note = await Note.create({
+    const payload = {
       title,
       description,
       file: fileData,
@@ -24,10 +25,16 @@ export const createNote = async (req, res) => {
       topic,
       difficulty,
       tags: tags ? JSON.parse(tags) : [],
-      classroom,
       status: 'approved', // Admin notes are auto-approved
       approvedBy: req.user._id,
-    });
+    };
+
+    // Only set classroom if it is a valid ObjectId
+    if (classroom && mongoose.Types.ObjectId.isValid(classroom)) {
+      payload.classroom = classroom;
+    }
+
+    const note = await Note.create(payload);
 
     res.status(201).json(note);
   } catch (error) {

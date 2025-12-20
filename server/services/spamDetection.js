@@ -1,4 +1,5 @@
 // Spam detection service
+import { getRedisClient } from '../config/redis.js';
 
 class SpamDetectionService {
   // Check if message contains spam
@@ -73,14 +74,42 @@ class SpamDetectionService {
     };
   }
 
-  // Rate limiting check (simple in-memory implementation)
+  // Rate limiting (Redis-backed with in-memory fallback)
   messageRateLimits = new Map();
 
-  checkRateLimit(userId, maxMessages = 10, timeWindow = 60000) {
+  async checkRateLimit(userId, maxMessages = 10, timeWindow = 60000) {
+    const client = getRedisClient();
+
+    // Redis-based rate limiting when available
+    if (client) {
+      try {
+        const key = `rate:messages:${userId}`;
+        const count = await client.incr(key);
+
+        if (count === 1) {
+          // Set TTL in milliseconds
+          await client.pexpire(key, timeWindow);
+        }
+
+        if (count > maxMessages) {
+          const ttl = await client.pttl(key);
+          return {
+            limited: true,
+            retryAfter: ttl > 0 ? ttl : timeWindow,
+          };
+        }
+
+        return { limited: false };
+      } catch (err) {
+        console.error('Redis rate limit error, falling back to memory:', err.message || err);
+        // fall through to memory implementation
+      }
+    }
+
+    // In-memory fallback implementation
     const now = Date.now();
     const userMessages = this.messageRateLimits.get(userId) || [];
 
-    // Filter messages within time window
     const recentMessages = userMessages.filter(
       (timestamp) => now - timestamp < timeWindow
     );
@@ -92,14 +121,13 @@ class SpamDetectionService {
       };
     }
 
-    // Add current message
     recentMessages.push(now);
     this.messageRateLimits.set(userId, recentMessages);
 
     return { limited: false };
   }
 
-  // Clean up old rate limit data periodically
+  // Clean up old rate limit data periodically (for in-memory fallback)
   cleanupRateLimits() {
     const now = Date.now();
     const timeWindow = 60000;

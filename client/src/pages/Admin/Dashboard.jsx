@@ -43,10 +43,26 @@ const Dashboard = () => {
     };
 
     return [
-      { label: 'Total Students', value: valueOrDash(dashboardStats?.totalStudents), sub: `${valueOrDash(dashboardStats?.activeUsersNow)} active right now` },
-      { label: 'Active Quizzes', value: valueOrDash(dashboardStats?.activeQuizzesNow), sub: 'Live right now' },
-      { label: 'Pending Notes', value: valueOrDash(dashboardStats?.pendingNotes), sub: 'Awaiting review' },
-      { label: 'Open Tickets', value: valueOrDash(dashboardStats?.openTickets), sub: 'Support queue' },
+      {
+        label: 'Total Students',
+        value: valueOrDash(dashboardStats?.totalStudents),
+        sub: `${valueOrDash(dashboardStats?.activeUsersNow)} active right now`,
+      },
+      {
+        label: 'Active Quizzes',
+        value: valueOrDash(dashboardStats?.activeQuizzesNow),
+        sub: 'Live right now',
+      },
+      {
+        label: 'Total Notes',
+        value: valueOrDash(dashboardStats?.totalNotes),
+        sub: 'All notes added to the platform',
+      },
+      {
+        label: 'Open Tickets',
+        value: valueOrDash(dashboardStats?.openTickets),
+        sub: 'Support queue',
+      },
     ];
   }, [dashboardStats, loading]);
 

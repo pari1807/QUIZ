@@ -6,7 +6,7 @@ const userLinks = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/notes', label: 'Notes' },
   { to: '/quizzes', label: 'Quizzes' },
-  { to: '/discussions/general', label: 'Discussions' },
+  { to: '/discussions', label: 'Discussions' },
   { to: '/assignments', label: 'Assignments' },
   { to: '/whiteboard/demo', label: 'Whiteboard' },
   { to: '/profile', label: 'Profile' },

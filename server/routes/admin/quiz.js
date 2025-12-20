@@ -12,6 +12,7 @@ import {
   exportQuiz,
   getAllQuizzes,
   manualGrade,
+  getAttemptDetail,
 } from '../../controllers/admin/quizController.js';
 import { protect, authorize } from '../../middleware/auth.js';
 import upload from '../../middleware/upload.js';
@@ -35,5 +36,6 @@ router.post('/:id/attachments', upload.single('file'), addAttachment);
 router.post('/:id/publish', publishQuiz);
 
 router.put('/attempts/:id/grade', manualGrade);
+router.get('/attempts/:id', getAttemptDetail);
 
 export default router;

@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import { createServer } from 'http';
 import connectDB from './config/database.js';
 import { initSocket } from './config/socket.js';
+import { initRedis } from './config/redis.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -16,9 +17,11 @@ import adminAnalyticsRoutes from './routes/admin/analytics.js';
 import adminModerationRoutes from './routes/admin/moderation.js';
 import adminAnnouncementRoutes from './routes/admin/announcements.js';
 import adminTicketRoutes from './routes/admin/tickets.js';
+import adminGroupRoutes from './routes/admin/groups.js';
 import userNotesRoutes from './routes/user/notes.js';
 import userQuizRoutes from './routes/user/quiz.js';
 import userDiscussionRoutes from './routes/user/discussions.js';
+import userGroupRoutes from './routes/user/groups.js';
 import userDashboardRoutes from './routes/user/dashboard.js';
 import userAssignmentRoutes from './routes/user/assignments.js';
 import userProfileRoutes from './routes/user/profile.js';
@@ -43,6 +46,11 @@ initWhiteboardSocket();
 
 //Connect to database
 connectDB();
+
+// Initialize Redis (optional)
+initRedis().catch((err) => {
+  console.error('Redis initialization failed:', err.message || err);
+});
 
 // Middleware
 app.use(helmet());
@@ -71,11 +79,13 @@ app.use('/api/admin/analytics', adminAnalyticsRoutes);
 app.use('/api/admin/moderation', adminModerationRoutes);
 app.use('/api/admin/announcements', adminAnnouncementRoutes);
 app.use('/api/admin/tickets', adminTicketRoutes);
+app.use('/api/admin/groups', adminGroupRoutes);
 
 // User routes
 app.use('/api/notes', userNotesRoutes);
 app.use('/api/quizzes', userQuizRoutes);
 app.use('/api/discussions', userDiscussionRoutes);
+app.use('/api/groups', userGroupRoutes);
 app.use('/api/dashboard', userDashboardRoutes);
 app.use('/api/assignments', userAssignmentRoutes);
 app.use('/api/profile', userProfileRoutes);

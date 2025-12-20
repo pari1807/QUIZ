@@ -102,6 +102,19 @@ export const adminAPI = {
   getQuizPerformance: (params) => api.get('/admin/analytics/quiz-performance', { params }),
   getNotesDownloads: () => api.get('/admin/analytics/notes-downloads'),
   getEngagement: () => api.get('/admin/analytics/engagement'),
+  getUserPerformanceSummary: (params) =>
+    api.get('/admin/analytics/user-performance', { params }),
+  getUserPerformanceDetail: (userId) =>
+    api.get(`/admin/analytics/user-performance/${userId}`),
+  getAttemptDetail: (attemptId) =>
+    api.get(`/admin/quizzes/attempts/${attemptId}`),
+
+  // Groups (global)
+  getGroups: () => api.get('/admin/groups'),
+  createGroup: (data) => api.post('/admin/groups', data),
+  updateGroup: (id, data) => api.put(`/admin/groups/${id}`, data),
+  deleteGroup: (id) => api.delete(`/admin/groups/${id}`),
+  getGroupStudents: (params) => api.get('/admin/groups/students', { params }),
   
   // Moderation
   muteUser: (id, duration) => api.post(`/admin/moderation/users/${id}/mute`, { duration }),
@@ -142,6 +155,11 @@ export const userAPI = {
   postMessage: (classroomId, formData) => api.post(`/discussions/${classroomId}`, formData),
   replyToMessage: (messageId, content) => api.post(`/discussions/${messageId}/reply`, { content }),
   addReaction: (messageId, emoji) => api.post(`/discussions/${messageId}/react`, { emoji }),
+
+  // Groups (global)
+  getMyGroups: () => api.get('/groups/mine'),
+  getGroupMessages: (groupId, params) => api.get(`/groups/${groupId}/messages`, { params }),
+  postGroupMessage: (groupId, formData) => api.post(`/groups/${groupId}/messages`, formData),
   
   // Dashboard
   getDashboardOverview: () => api.get('/dashboard/overview'),
@@ -150,6 +168,7 @@ export const userAPI = {
   getPerformance: () => api.get('/dashboard/performance'),
   getUpcomingEvents: () => api.get('/dashboard/events'),
   getNotifications: (params) => api.get('/dashboard/notifications', { params }),
+  getUserClassrooms: () => api.get('/dashboard/classrooms'),
   
   // Assignments
   getAssignments: (params) => api.get('/assignments', { params }),

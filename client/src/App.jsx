@@ -26,7 +26,8 @@ import QuizBuilder from './pages/Admin/QuizBuilder';
 import QuizEdit from './pages/Admin/QuizEdit';
 
 import Analytics from './pages/Admin/Analytics';
-import Moderation from './pages/Admin/Moderation';
+import AttemptDetail from './pages/Admin/AttemptDetail';
+import AdminDiscussions from './pages/Admin/Discussions';
 
 // Layouts & Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -124,7 +125,7 @@ function App() {
           <Route path="quizzes" element={<Quizzes />} />
           <Route path="quizzes/:id/take" element={<QuizTaking />} />
           <Route path="quizzes/:id/results" element={<QuizResults />} />
-          <Route path="discussions/:classroomId" element={<Discussions />} />
+          <Route path="discussions" element={<Discussions />} />
           <Route path="assignments" element={<Assignments />} />
           <Route path="profile" element={<Profile />} />
           <Route path="whiteboard/:sessionId" element={<Whiteboard />} />
@@ -145,7 +146,8 @@ function App() {
           <Route path="quizzes/:id/edit" element={<QuizEdit />} />
 
           <Route path="analytics" element={<Analytics />} />
-          <Route path="moderation" element={<Moderation />} />
+          <Route path="attempts/:attemptId" element={<AttemptDetail />} />
+          <Route path="discussions" element={<AdminDiscussions />} />
         </Route>
 
         {/* Default Redirects */}

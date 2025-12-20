@@ -16,6 +16,18 @@ export const initDiscussionSocket = () => {
       console.log(`User ${socket.userId} left classroom ${classroomId}`);
     });
 
+    // Join group room
+    socket.on('joinGroup', (groupId) => {
+      socket.join(`group:${groupId}`);
+      console.log(`User ${socket.userId} joined group ${groupId}`);
+    });
+
+    // Leave group room
+    socket.on('leaveGroup', (groupId) => {
+      socket.leave(`group:${groupId}`);
+      console.log(`User ${socket.userId} left group ${groupId}`);
+    });
+
     // Typing indicator
     socket.on('typing', ({ classroomId, username }) => {
       socket.to(`classroom:${classroomId}`).emit('userTyping', {

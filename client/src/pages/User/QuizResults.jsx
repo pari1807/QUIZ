@@ -63,7 +63,7 @@ const QuizResults = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl md:text-3xl font-semibold text-slate-50 mb-1">Quiz Results</h1>
         <p className="text-sm text-slate-400">Your submission summary.</p>
@@ -80,6 +80,41 @@ const QuizResults = () => {
             <p className="text-xs text-slate-400">Score</p>
             <p className="text-xl font-semibold text-slate-50">{results.score} / {results.quiz?.totalMarks}</p>
           </div>
+
+        {Array.isArray(results.attemptsHistory) && results.attemptsHistory.length > 1 && (
+          <div className="pt-4 border-t border-slate-800 mt-2 space-y-2">
+            <p className="text-xs font-semibold text-slate-200">Attempt history</p>
+            <div className="space-y-1">
+              {results.attemptsHistory.map((a) => (
+                <div
+                  key={a.attemptId}
+                  className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs ${
+                    a.isCurrent
+                      ? 'border-primary-500/70 bg-primary-500/10 text-primary-50'
+                      : 'border-slate-800 bg-slate-900/60 text-slate-300'
+                  }`}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">
+                      Attempt {a.attemptNumber}{a.isCurrent ? ' (current)' : ''}
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      {a.submittedAt ? new Date(a.submittedAt).toLocaleString() : 'Not available'}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="block">
+                      {a.score} / {a.maxScore}
+                    </span>
+                    <span className="block text-[11px] text-slate-400">
+                      {Number(a.percentage ?? 0).toFixed(2)}% • {a.timeTaken || 0}s
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
           <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
             <p className="text-xs text-slate-400">Percentage</p>
             <p className="text-xl font-semibold text-slate-50">

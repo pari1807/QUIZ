@@ -32,6 +32,82 @@ export const createQuiz = async (req, res) => {
   }
 };
 
+// @desc    Get detailed quiz attempt for admin review
+// @route   GET /api/admin/quizzes/attempts/:id
+// @access  Private/Admin
+export const getAttemptDetail = async (req, res) => {
+  try {
+    const attempt = await QuizAttempt.findById(req.params.id)
+      .populate({
+        path: 'quiz',
+        populate: { path: 'questions' },
+      })
+      .populate('student', 'username email avatar course semester');
+
+    if (!attempt) {
+      return res.status(404).json({ message: 'Quiz attempt not found' });
+    }
+
+    const questions = attempt.quiz.questions.map((q) => {
+      const answer = attempt.answers.find(
+        (a) => a.question.toString() === q._id.toString()
+      );
+
+      let selectedOptionIndex = null;
+      if (q.type === 'MCQ' && Array.isArray(q.options) && answer?.selectedAnswer) {
+        selectedOptionIndex = q.options.findIndex(
+          (opt) => opt.text === answer.selectedAnswer
+        );
+      }
+
+      return {
+        questionId: q._id,
+        type: q.type,
+        text: q.text,
+        explanation: q.explanation,
+        marks: q.marks,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        subject: q.subject,
+        topic: q.topic,
+        answer: {
+          selectedAnswer: answer?.selectedAnswer ?? null,
+          isCorrect: !!answer?.isCorrect,
+          marksAwarded: answer?.marksAwarded ?? 0,
+          // Per-question time is not currently tracked; kept for future use
+          timeTaken: null,
+          selectedOptionIndex,
+        },
+      };
+    });
+
+    const payload = {
+      attempt: {
+        id: attempt._id,
+        score: attempt.score,
+        maxScore: attempt.maxScore,
+        percentage: attempt.percentage,
+        status: attempt.status,
+        timeTaken: attempt.timeTaken,
+        startedAt: attempt.startedAt,
+        submittedAt: attempt.submittedAt,
+      },
+      quiz: {
+        id: attempt.quiz._id,
+        title: attempt.quiz.title,
+        description: attempt.quiz.description,
+        totalMarks: attempt.quiz.totalMarks,
+      },
+      student: attempt.student,
+      questions,
+    };
+
+    res.json(payload);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const getQuizDetails = async (req, res) => {
   try {
     const quiz = await Quiz.findById(req.params.id)

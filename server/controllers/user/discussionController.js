@@ -51,8 +51,8 @@ export const postMessage = async (req, res) => {
       return res.status(400).json({ message: 'Message flagged as spam' });
     }
 
-    // Check rate limit
-    const rateLimit = spamDetection.checkRateLimit(req.user._id);
+    // Check rate limit (Redis-backed, with in-memory fallback)
+    const rateLimit = await spamDetection.checkRateLimit(req.user._id);
     if (rateLimit.limited) {
       return res.status(429).json({
         message: 'Too many messages. Please try again later.',
