@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { userAPI } from '../../services/api';
 import socketService from '../../services/socket';
 import useAuthStore from '../../store/authStore';
@@ -18,6 +18,8 @@ const Discussions = () => {
 
   const [content, setContent] = useState('');
   const [files, setFiles] = useState([]);
+
+  const messagesContainerRef = useRef(null);
 
   const activeTitle = useMemo(() => {
     if (!activeId) return '';
@@ -113,6 +115,16 @@ const Discussions = () => {
     };
   }, [activeId, activeType]);
 
+  // Always scroll to latest message when messages or room change
+  useEffect(() => {
+    if (!messagesContainerRef.current) return;
+    const el = messagesContainerRef.current;
+    // Small timeout to ensure DOM paint completed
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+  }, [activeId, messages.length]);
+
   const handleFilesChange = (e) => {
     setFiles(Array.from(e.target.files || []));
   };
@@ -127,17 +139,21 @@ const Discussions = () => {
       const formData = new FormData();
       formData.append('content', content.trim());
       files.forEach((f) => formData.append('attachments', f));
-
+      let res;
       if (activeType === 'classroom') {
-        await userAPI.postMessage(activeId, formData);
+        res = await userAPI.postMessage(activeId, formData);
       } else {
-        await userAPI.postGroupMessage(activeId, formData);
+        res = await userAPI.postGroupMessage(activeId, formData);
       }
 
+      const created = res?.data;
       setContent('');
       setFiles([]);
-      // optimistic socket should add; but keep consistent
-      await loadMessages({ type: activeType, id: activeId });
+
+      // Immediately append my own message; socket will still deliver to others
+      if (created && created._id) {
+        setMessages((prev) => [...prev, created]);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send message');
     } finally {
@@ -249,7 +265,10 @@ const Discussions = () => {
             </div>
           )}
 
-          <div className="flex-1 min-h-[260px] max-h-[520px] overflow-y-auto px-4 py-3 space-y-2 bg-slate-950/40">
+          <div
+            ref={messagesContainerRef}
+            className="flex-1 min-h-[260px] max-h-[520px] overflow-y-auto px-4 py-3 space-y-2 bg-slate-950/40"
+          >
             {!activeId && (
               <p className="text-sm text-slate-500">
                 Choose a classroom or a group from the left.
