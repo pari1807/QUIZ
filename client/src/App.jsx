@@ -18,6 +18,7 @@ import Discussions from './pages/User/Discussions';
 import Assignments from './pages/User/Assignments';
 import Profile from './pages/User/Profile';
 import Whiteboard from './pages/User/Whiteboard';
+import UserClassrooms from './pages/User/Classrooms';
 import ClassroomVideos from './pages/User/ClassroomVideos';
 
 // Admin Pages
@@ -129,6 +130,7 @@ function App() {
           <Route path="quizzes/:id/results" element={<QuizResults />} />
           <Route path="discussions" element={<Discussions />} />
           <Route path="assignments" element={<Assignments />} />
+          <Route path="classrooms" element={<UserClassrooms />} />
           <Route path="classrooms/:id/videos" element={<ClassroomVideos />} />
           <Route path="profile" element={<Profile />} />
           <Route path="whiteboard/:sessionId" element={<Whiteboard />} />

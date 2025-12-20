@@ -25,6 +25,7 @@ import userGroupRoutes from './routes/user/groups.js';
 import userDashboardRoutes from './routes/user/dashboard.js';
 import userAssignmentRoutes from './routes/user/assignments.js';
 import userProfileRoutes from './routes/user/profile.js';
+import userClassroomsRoutes from './routes/user/classrooms.js';
 import whiteboardRoutes from './routes/whiteboard.js';
 
 // Load environment variables
@@ -89,6 +90,7 @@ app.use('/api/groups', userGroupRoutes);
 app.use('/api/dashboard', userDashboardRoutes);
 app.use('/api/assignments', userAssignmentRoutes);
 app.use('/api/profile', userProfileRoutes);
+app.use('/api/classrooms', userClassroomsRoutes);
 app.use('/api/whiteboard', whiteboardRoutes);
 
 // Health check route
