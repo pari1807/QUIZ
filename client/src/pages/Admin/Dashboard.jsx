@@ -58,11 +58,6 @@ const Dashboard = () => {
         value: valueOrDash(dashboardStats?.totalNotes),
         sub: 'All notes added to the platform',
       },
-      {
-        label: 'Open Tickets',
-        value: valueOrDash(dashboardStats?.openTickets),
-        sub: 'Support queue',
-      },
     ];
   }, [dashboardStats, loading]);
 
