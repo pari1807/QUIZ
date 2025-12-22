@@ -188,20 +188,27 @@ const Discussions = () => {
                 <p className="text-xs text-slate-500">No classrooms found.</p>
               )}
               {classrooms.map((c) => (
-                <button
-                  key={c._id}
-                  onClick={() => selectItem('classroom', c._id)}
-                  className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
-                    activeType === 'classroom' && activeId === c._id
-                      ? 'bg-slate-900 border-primary-500/70 text-primary-100'
-                      : 'bg-slate-950/60 border-slate-800 hover:bg-slate-900/80'
-                  }`}
-                >
-                  <p className="font-medium">{c.name || 'Classroom'}</p>
-                  <p className="text-[11px] text-slate-400 truncate">
-                    {c.description || 'Group chat for this classroom'}
-                  </p>
-                </button>
+                <div key={c._id} className="flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => selectItem('classroom', c._id)}
+                    className={`flex-1 text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
+                      activeType === 'classroom' && activeId === c._id
+                        ? 'bg-slate-900 border-primary-500/70 text-primary-100'
+                        : 'bg-slate-950/60 border-slate-800 hover:bg-slate-900/80'
+                    }`}
+                  >
+                    <p className="font-medium">{c.name || 'Classroom'}</p>
+                    <p className="text-[11px] text-slate-400 truncate">
+                      {c.description || 'Group chat for this classroom'}
+                    </p>
+                  </button>
+                  <a
+                    href={`/classrooms/${c._id}/videos`}
+                    className="text-[10px] px-2 py-1 rounded-lg border border-primary-500/60 text-primary-200 hover:bg-primary-500/10 whitespace-nowrap"
+                  >
+                    Videos
+                  </a>
+                </div>
               ))}
             </div>
           </div>

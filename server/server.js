@@ -18,6 +18,7 @@ import adminModerationRoutes from './routes/admin/moderation.js';
 import adminAnnouncementRoutes from './routes/admin/announcements.js';
 import adminTicketRoutes from './routes/admin/tickets.js';
 import adminGroupRoutes from './routes/admin/groups.js';
+import adminProfileRoutes from './routes/admin/profile.js';
 import userNotesRoutes from './routes/user/notes.js';
 import userQuizRoutes from './routes/user/quiz.js';
 import userDiscussionRoutes from './routes/user/discussions.js';
@@ -25,6 +26,7 @@ import userGroupRoutes from './routes/user/groups.js';
 import userDashboardRoutes from './routes/user/dashboard.js';
 import userAssignmentRoutes from './routes/user/assignments.js';
 import userProfileRoutes from './routes/user/profile.js';
+import userClassroomsRoutes from './routes/user/classrooms.js';
 import whiteboardRoutes from './routes/whiteboard.js';
 
 // Load environment variables
@@ -80,6 +82,7 @@ app.use('/api/admin/moderation', adminModerationRoutes);
 app.use('/api/admin/announcements', adminAnnouncementRoutes);
 app.use('/api/admin/tickets', adminTicketRoutes);
 app.use('/api/admin/groups', adminGroupRoutes);
+app.use('/api/admin/profile', adminProfileRoutes);
 
 // User routes
 app.use('/api/notes', userNotesRoutes);
@@ -89,6 +92,7 @@ app.use('/api/groups', userGroupRoutes);
 app.use('/api/dashboard', userDashboardRoutes);
 app.use('/api/assignments', userAssignmentRoutes);
 app.use('/api/profile', userProfileRoutes);
+app.use('/api/classrooms', userClassroomsRoutes);
 app.use('/api/whiteboard', whiteboardRoutes);
 
 // Health check route

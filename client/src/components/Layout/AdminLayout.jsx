@@ -10,6 +10,7 @@ const adminLinks = [
   { to: '/admin/analytics', label: 'Analytics' },
   { to: '/admin/discussions', label: 'Discussions' },
   { to: '/admin/announcements', label: 'Announcements' },
+  { to: '/admin/profile', label: 'Profile' },
 ];
 
 const AdminLayout = () => {
@@ -26,6 +27,10 @@ const AdminLayout = () => {
   const handleSwitchToUser = () => {
     setViewMode('user');
     navigate('/dashboard');
+  };
+
+  const handleGoToProfile = () => {
+    navigate('/admin/profile');
   };
 
   return (
@@ -64,6 +69,12 @@ const AdminLayout = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleGoToProfile}
+              className="text-xs md:text-sm px-3 py-1.5 rounded-lg border border-slate-700 hover:border-primary-500/70 hover:text-primary-200 transition-colors"
+            >
+              Profile
+            </button>
             <button
               onClick={handleSwitchToUser}
               className="hidden md:inline-flex text-xs md:text-sm px-3 py-1.5 rounded-lg border border-slate-700 hover:border-primary-500/70 hover:text-primary-200 transition-colors"
