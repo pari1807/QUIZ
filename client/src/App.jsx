@@ -154,6 +154,7 @@ function App() {
           <Route path="analytics" element={<Analytics />} />
           <Route path="attempts/:attemptId" element={<AttemptDetail />} />
           <Route path="discussions" element={<AdminDiscussions />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
 
         {/* Default Redirects */}

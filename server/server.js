@@ -18,6 +18,7 @@ import adminModerationRoutes from './routes/admin/moderation.js';
 import adminAnnouncementRoutes from './routes/admin/announcements.js';
 import adminTicketRoutes from './routes/admin/tickets.js';
 import adminGroupRoutes from './routes/admin/groups.js';
+import adminProfileRoutes from './routes/admin/profile.js';
 import userNotesRoutes from './routes/user/notes.js';
 import userQuizRoutes from './routes/user/quiz.js';
 import userDiscussionRoutes from './routes/user/discussions.js';
@@ -81,6 +82,7 @@ app.use('/api/admin/moderation', adminModerationRoutes);
 app.use('/api/admin/announcements', adminAnnouncementRoutes);
 app.use('/api/admin/tickets', adminTicketRoutes);
 app.use('/api/admin/groups', adminGroupRoutes);
+app.use('/api/admin/profile', adminProfileRoutes);
 
 // User routes
 app.use('/api/notes', userNotesRoutes);
