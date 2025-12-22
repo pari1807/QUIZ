@@ -11,12 +11,9 @@ const userLinks = [
   { to: '/quizzes', label: 'Quizzes' },
   { to: '/discussions', label: 'Discussions' },
   { to: '/assignments', label: 'Assignments' },
-<<<<<<< HEAD
+  { to: '/classrooms', label: 'Classrooms' },
   { to: '/announcements', label: 'Announcements' },
   { to: '/whiteboard/demo', label: 'Whiteboard' },
-=======
-  { to: '/classrooms', label: 'Classrooms' },
->>>>>>> classroom
   { to: '/profile', label: 'Profile' },
 ];
 

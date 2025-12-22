@@ -18,12 +18,9 @@ import Discussions from './pages/User/Discussions';
 import Assignments from './pages/User/Assignments';
 import Profile from './pages/User/Profile';
 import Whiteboard from './pages/User/Whiteboard';
-<<<<<<< HEAD
 import UserAnnouncements from './pages/User/Announcements';
-=======
 import UserClassrooms from './pages/User/Classrooms';
 import ClassroomVideos from './pages/User/ClassroomVideos';
->>>>>>> classroom
 
 // Admin Pages
 import AdminDashboard from './pages/Admin/Dashboard';
@@ -34,11 +31,8 @@ import QuizEdit from './pages/Admin/QuizEdit';
 import Analytics from './pages/Admin/Analytics';
 import AttemptDetail from './pages/Admin/AttemptDetail';
 import AdminDiscussions from './pages/Admin/Discussions';
-<<<<<<< HEAD
 import AdminAnnouncements from './pages/Admin/Announcements';
-=======
 import Classrooms from './pages/Admin/Classrooms';
->>>>>>> classroom
 
 // Layouts & Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -138,12 +132,9 @@ function App() {
           <Route path="quizzes/:id/results" element={<QuizResults />} />
           <Route path="discussions" element={<Discussions />} />
           <Route path="assignments" element={<Assignments />} />
-<<<<<<< HEAD
           <Route path="announcements" element={<UserAnnouncements />} />
-=======
           <Route path="classrooms" element={<UserClassrooms />} />
           <Route path="classrooms/:id/videos" element={<ClassroomVideos />} />
->>>>>>> classroom
           <Route path="profile" element={<Profile />} />
           <Route path="whiteboard/:sessionId" element={<Whiteboard />} />
         </Route>
@@ -166,11 +157,8 @@ function App() {
           <Route path="analytics" element={<Analytics />} />
           <Route path="attempts/:attemptId" element={<AttemptDetail />} />
           <Route path="discussions" element={<AdminDiscussions />} />
-<<<<<<< HEAD
           <Route path="announcements" element={<AdminAnnouncements />} />
-=======
           <Route path="profile" element={<Profile />} />
->>>>>>> classroom
         </Route>
 
         {/* Default Redirects */}
