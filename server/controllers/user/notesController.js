@@ -1,5 +1,6 @@
 import Note from '../../models/Note.js';
 import gamificationService from '../../services/gamificationService.js';
+import performanceService from '../../services/performanceService.js';
 
 // @desc    Browse notes with filters
 // @route   GET /api/notes
@@ -70,6 +71,9 @@ export const getNoteDetails = async (req, res) => {
     // Track read progress (if not already read)
     if (req.user && !req.user.readNotes.includes(note._id)) {
       await req.user.updateOne({ $addToSet: { readNotes: note._id } });
+
+      // Update real-time leaderboard score (5 points per note)
+      await performanceService.updateScore(req.user._id, 5);
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -94,6 +98,9 @@ export const downloadNote = async (req, res) => {
     // Track read progress (if not already read)
     if (req.user && !req.user.readNotes.includes(note._id)) {
       await req.user.updateOne({ $addToSet: { readNotes: note._id } });
+      
+      // Update real-time leaderboard score (5 points per note)
+      await performanceService.updateScore(req.user._id, 5);
     }
 
     // Award XP to uploader

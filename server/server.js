@@ -42,9 +42,11 @@ initSocket(httpServer);
 // Initialize socket event handlers
 import { initDiscussionSocket } from './sockets/discussionSocket.js';
 import { initWhiteboardSocket } from './sockets/whiteboardSocket.js';
+import { initAdminSocket } from './sockets/adminSocket.js';
 
 initDiscussionSocket();
 initWhiteboardSocket();
+initAdminSocket();
 
 //Connect to database
 connectDB();

@@ -1,5 +1,6 @@
 import Classroom from '../../models/Classroom.js';
 import User from '../../models/User.js';
+import performanceService from '../../services/performanceService.js';
 
 // @desc    Get all published topics from all classrooms (public access for all users)
 // @route   GET /api/classrooms/published/all
@@ -98,6 +99,9 @@ export const markVideoWatched = async (req, res) => {
       if (!user.watchedVideos) user.watchedVideos = [];
       user.watchedVideos.push({ videoId });
       await user.save();
+
+      // Update real-time leaderboard score (10 points per video)
+      await performanceService.updateScore(req.user._id, 10);
     }
 
     res.json({ message: 'Video marked as watched', watchedVideos: user.watchedVideos });

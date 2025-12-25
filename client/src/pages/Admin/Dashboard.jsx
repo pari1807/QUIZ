@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { adminAPI } from '../../services/api';
+import socketService from '../../services/socket';
 
 const quickLinks = [
   { to: '/admin/notes', label: 'Review Notes', desc: 'Approve, reject, and manage notes', badge: 'Notes' },
@@ -13,6 +14,22 @@ const quickLinks = [
 const Dashboard = () => {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [topPerformers, setTopPerformers] = useState([]);
+
+  useEffect(() => {
+    // Join admin dashboard room
+    socketService.joinAdminDashboard();
+
+    // Listen for leaderboard updates
+    socketService.onTopPerformersUpdate(({ topPerformers }) => {
+      setTopPerformers(topPerformers);
+    });
+
+    return () => {
+      socketService.leaveAdminDashboard();
+      socketService.offTopPerformersUpdate();
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -208,6 +225,57 @@ const Dashboard = () => {
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 text-[11px]">Healthy</span>
               </li>
             </ul>
+          </div>
+
+          <div className="card border-primary-500/10 bg-gradient-to-br from-slate-900/60 to-primary-500/5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-slate-50 uppercase tracking-wider">Top Performers</h2>
+              <span className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] text-emerald-400 font-medium">LIVE</span>
+              </span>
+            </div>
+            
+            <div className="space-y-3">
+              {topPerformers.length === 0 ? (
+                <p className="text-xs text-slate-500 text-center py-4">No activity recorded today yet.</p>
+              ) : (
+                topPerformers.slice(0, 3).map((performer, idx) => (
+                  <motion.div 
+                    key={performer.userId}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="flex items-center justify-between p-2 rounded-lg bg-slate-800/40 border border-slate-700/50 hover:border-primary-500/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ring-2 ring-slate-900 ${
+                          idx === 0 ? 'bg-amber-400 text-slate-900' : 
+                          idx === 1 ? 'bg-slate-300 text-slate-900' : 
+                          'bg-amber-700 text-slate-100'
+                        }`}>
+                          {performer.avatar ? (
+                            <img src={performer.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
+                          ) : (
+                            performer.username[0].toUpperCase()
+                          )}
+                        </div>
+                        <span className="absolute -top-1 -left-1 text-[10px] font-bold">#{idx + 1}</span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-100">{performer.username}</p>
+                        <p className="text-[10px] text-slate-500">Daily Performer</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-primary-400">{Math.round(performer.score)}</p>
+                      <p className="text-[9px] text-slate-500 uppercase">Points</p>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </div>
           </div>
         </motion.div>
       </div>

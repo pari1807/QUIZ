@@ -168,6 +168,23 @@ class SocketService {
     this.on('announcement', callback);
   }
 
+  // Admin Dashboard
+  joinAdminDashboard() {
+    this.emit('join_admin_dashboard');
+  }
+
+  leaveAdminDashboard() {
+    this.emit('leave_admin_dashboard');
+  }
+
+  onTopPerformersUpdate(callback) {
+    this.on('top_performers_update', callback);
+  }
+
+  offTopPerformersUpdate(callback) {
+    this.off('top_performers_update', callback);
+  }
+
   // Generic event listeners
   on(event, callback) {
     if (this.socket) {

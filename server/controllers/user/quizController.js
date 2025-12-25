@@ -2,6 +2,7 @@ import Quiz from '../../models/Quiz.js';
 import QuizAttempt from '../../models/QuizAttempt.js';
 import Question from '../../models/Question.js';
 import gamificationService from '../../services/gamificationService.js';
+import performanceService from '../../services/performanceService.js';
 
 // @desc    Get available quizzes
 // @route   GET /api/quizzes
@@ -219,6 +220,9 @@ export const submitQuiz = async (req, res) => {
     // Award XP based on score
     const xpPoints = Math.floor(attempt.percentage / 10);
     await gamificationService.awardXP(req.user._id, xpPoints, 'Quiz completed');
+
+    // Update real-time leaderboard score
+    await performanceService.updateScore(req.user._id, attempt.score);
 
     // Check for badges
     const userAttempts = await QuizAttempt.countDocuments({
