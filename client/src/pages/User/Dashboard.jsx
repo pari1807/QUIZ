@@ -101,6 +101,39 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Active Live Quiz Alert */}
+      {dashboardData?.upcomingEvents?.activeLiveQuizzes?.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-600 to-indigo-600 p-6 shadow-xl shadow-primary-500/20 my-6"
+        >
+          <div className="absolute top-0 right-0 p-4">
+             <span className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[10px] font-black tracking-widest text-white backdrop-blur-md">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-ping" />
+                LIVE
+             </span>
+          </div>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-white mb-1">
+                 Join the Live Competition! 🎯
+              </h2>
+              <p className="text-sm text-slate-100/80">
+                {dashboardData.upcomingEvents.activeLiveQuizzes[0].title} is active. Don&apos;t miss out on those 50 bonus XP!
+              </p>
+            </div>
+            <Link 
+              to="/quizzes" 
+              className="w-fit rounded-xl bg-white px-6 py-2.5 text-sm font-bold text-primary-600 shadow-lg hover:bg-slate-50 transition-all active:scale-95"
+            >
+               JOIN NOW →
+            </Link>
+          </div>
+          <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-white/20 blur-3xl" />
+        </motion.div>
+      )}
+
       {/* XP + streak row -> Now Learning Progress */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}

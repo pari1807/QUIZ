@@ -224,23 +224,6 @@ const Dashboard = () => {
             </ul>
           </div>
 
-          <div className="card">
-            <h2 className="text-sm font-semibold text-slate-50 mb-3">Moderation queue</h2>
-            <ul className="space-y-2 text-xs text-slate-300">
-              <li className="flex items-center justify-between">
-                <span>Flagged messages</span>
-                <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-300 text-[11px]">5 pending</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Reported users</span>
-                <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 text-[11px]">2 under review</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Spam detection</span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 text-[11px]">Healthy</span>
-              </li>
-            </ul>
-          </div>
 
           <div className="card border-primary-500/10 bg-gradient-to-br from-slate-900/60 to-primary-500/5">
             <div className="flex items-center justify-between mb-4">

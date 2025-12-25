@@ -72,8 +72,38 @@ export const startQuiz = async (req, res) => {
       return res.status(404).json({ message: 'Quiz not available' });
     }
 
-    // Check if quiz has already been attempted and retake is not allowed
-    if (!quiz.settings.allowRetake) {
+    // --- Live Quiz Specific Logic ---
+    if (quiz.type === 'live') {
+      const now = new Date();
+      const startTime = new Date(quiz.startTime);
+      const thirtyMinutes = 30 * 60 * 1000;
+      const windowEnd = new Date(startTime.getTime() + thirtyMinutes);
+
+      if (now < startTime) {
+        return res.status(400).json({ 
+          message: `This live quiz starts at ${startTime.toLocaleTimeString()}. Please wait.` 
+        });
+      }
+
+      if (now > windowEnd) {
+        return res.status(400).json({ 
+          message: 'The window to join this live quiz has closed (30 min limit).' 
+        });
+      }
+
+      // Strict single attempt check for live quizzes
+      const existingLiveAttempt = await QuizAttempt.findOne({
+        quiz: quiz._id,
+        student: req.user._id,
+      });
+
+      if (existingLiveAttempt) {
+        return res.status(400).json({ 
+          message: 'You have already attempted or are currently taking this live quiz. Only one attempt is allowed.' 
+        });
+      }
+    } else if (!quiz.settings.allowRetake) {
+      // Regular practice quiz with retake disabled
       const existingAttempt = await QuizAttempt.findOne({
         quiz: quiz._id,
         student: req.user._id,
@@ -219,7 +249,16 @@ export const submitQuiz = async (req, res) => {
 
     // Award XP based on score
     const xpPoints = Math.floor(attempt.percentage / 10);
-    await gamificationService.awardXP(req.user._id, xpPoints, 'Quiz completed');
+    let totalXpAwarded = xpPoints;
+    let reason = 'Quiz completed';
+
+    // Bonus for Live Quiz
+    if (attempt.quiz?.type === 'live') {
+      totalXpAwarded += 50;
+      reason = 'Live Quiz completed (+50 Bonus!)';
+    }
+
+    await gamificationService.awardXP(req.user._id, totalXpAwarded, reason);
 
     // Update real-time leaderboard score
     await performanceService.updateScore(req.user._id, attempt.score, `Completed ${attempt.quiz?.title || 'Quiz'}`);

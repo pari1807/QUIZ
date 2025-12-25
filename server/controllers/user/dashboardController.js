@@ -109,17 +109,29 @@ export const getUpcomingEvents = async (req, res) => {
   try {
     const now = new Date();
 
-    // Upcoming quizzes
+    // Upcoming quizzes (starting in more than 30 mins)
     const upcomingQuizzes = await import('../../models/Quiz.js').then((m) =>
       m.default.find({
         type: 'live',
         status: 'published',
-        startTime: { $gt: now },
+        startTime: { $gt: new Date(now.getTime() + 30 * 60 * 1000) },
         deletedAt: null,
       })
         .populate('classroom', 'name')
         .sort({ startTime: 1 })
         .limit(5)
+    );
+
+    // Active live quizzes (started within the last 30 mins)
+    const activeLiveQuizzes = await import('../../models/Quiz.js').then((m) =>
+      m.default.find({
+        type: 'live',
+        status: 'published',
+        startTime: { $lte: now, $gt: new Date(now.getTime() - 30 * 60 * 1000) },
+        deletedAt: null,
+      })
+        .populate('classroom', 'name')
+        .sort({ startTime: -1 })
     );
 
     // Pending assignments
@@ -141,6 +153,7 @@ export const getUpcomingEvents = async (req, res) => {
       .limit(5);
 
     res.json({
+      activeLiveQuizzes,
       upcomingQuizzes,
       pendingAssignments,
       announcements,

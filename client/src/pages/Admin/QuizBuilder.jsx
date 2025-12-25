@@ -10,6 +10,7 @@ const initialState = {
   classroom: '',
   type: 'practice',
   timeLimit: 30,
+  startTime: '',
 };
 
 const QuizBuilder = () => {
@@ -105,6 +106,7 @@ const QuizBuilder = () => {
           timeLimit: Number(form.timeLimit) || 30,
           showSolutions: false,
         },
+        startTime: form.type === 'live' ? form.startTime : null,
       };
 
       // Only include classroom if it looks like a valid ObjectId (24 hex chars)
@@ -294,6 +296,7 @@ const QuizBuilder = () => {
         classroom: quiz.classroom?._id || '',
         type: quiz.type || 'practice',
         timeLimit: quiz.settings?.timeLimit ?? 30,
+        startTime: quiz.startTime ? new Date(quiz.startTime).toISOString().slice(0, 16) : '',
       });
       if (qs.length > 0) {
         const first = qs[0];
@@ -388,9 +391,21 @@ const QuizBuilder = () => {
                   className="input-field"
                 >
                   <option value="practice">Practice</option>
-                  <option value="live">Live</option>
+                  <option value="live">Live (Scheduled)</option>
                 </select>
               </div>
+              {form.type === 'live' && (
+                <div className="space-y-1">
+                  <label className="text-xs text-slate-400">Start time</label>
+                  <input
+                    type="datetime-local"
+                    name="startTime"
+                    value={form.startTime}
+                    onChange={handleChange}
+                    className="input-field"
+                  />
+                </div>
+              )}
               <div className="space-y-1">
                 <label className="text-xs text-slate-400">Time limit (minutes)</label>
                 <input
