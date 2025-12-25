@@ -107,6 +107,8 @@ export const adminAPI = {
     api.delete(`/admin/classrooms/${id}/topics/${topicId}/videos/${videoId}`),
   publishClassroomTopic: (id, topicId, published) =>
     api.put(`/admin/classrooms/${id}/topics/${topicId}/publish`, { published }),
+  addAllUsersToClassroom: (id) =>
+    api.post(`/admin/classrooms/${id}/add-all-users`),
   
   // Analytics
   getDashboardStats: () => api.get('/admin/analytics/dashboard'),

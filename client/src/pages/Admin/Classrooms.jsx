@@ -54,6 +54,24 @@ const Classrooms = () => {
     loadClassrooms();
   }, []);
 
+  const handleAddAllUsers = async () => {
+    if (!selectedClassroomId) {
+      setError('Please select a classroom first');
+      return;
+    }
+    
+    if (!confirm('Add all registered users to this classroom as students?')) return;
+    
+    try {
+      setError('');
+      // This will add all users - you may want to customize this
+      await adminAPI.addAllUsersToClassroom(selectedClassroomId);
+      alert('All users have been added to the classroom!');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to add users');
+    }
+  };
+
   useEffect(() => {
     if (!selectedClassroomId) {
       setTopics([]);
@@ -219,6 +237,14 @@ const Classrooms = () => {
             Organize your content into topics and playlists. Add videos via links or direct uploads.
           </p>
         </div>
+        {selectedClassroom && (
+          <button
+            onClick={handleAddAllUsers}
+            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm font-medium text-white transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40"
+          >
+            + Add All Users
+          </button>
+        )}
       </div>
 
       <AnimatePresence>
@@ -391,13 +417,19 @@ const Classrooms = () => {
                                   <button
                                     type="button"
                                     onClick={() => handlePublishTopic(id, t.published)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                                       t.published
                                         ? 'bg-amber-500/10 border border-amber-500/50 text-amber-400 hover:bg-amber-500/20'
                                         : 'bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20'
                                     }`}
+                                    title={t.published ? 'Hide this playlist from users' : 'Make this playlist visible to users'}
                                   >
-                                    {t.published ? 'Unpublish' : 'Publish'}
+                                    {t.published 
+                                      ? '🔒 Unpublish' 
+                                      : (t.videos && t.videos.length > 0) 
+                                        ? '✓ Publish Playlist' 
+                                        : '📝 Publish (Empty)'
+                                    }
                                   </button>
                                   <button
                                     type="button"

@@ -411,3 +411,50 @@ export const publishClassroomTopic = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Add all users to classroom as students
+// @route   POST /api/admin/classrooms/:id/add-all-users
+// @access  Private/Admin
+export const addAllUsersToClassroom = async (req, res) => {
+  try {
+    const classroom = await Classroom.findById(req.params.id);
+
+    if (!classroom) {
+      return res.status(404).json({ message: 'Classroom not found' });
+    }
+
+    // Get all users with role 'student'
+    const users = await User.find({ role: 'student', isActive: true });
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'No users found' });
+    }
+
+    // Get existing member IDs
+    const existingMemberIds = classroom.members.map(m => m.user.toString());
+
+    // Filter out users who are already members
+    const newUsers = users.filter(u => !existingMemberIds.includes(u._id.toString()));
+
+    if (newUsers.length === 0) {
+      return res.json({ message: 'All users are already members', classroom });
+    }
+
+    // Add new members
+    const newMembers = newUsers.map((user) => ({
+      user: user._id,
+      role: 'student',
+      joinedAt: new Date(),
+    }));
+
+    classroom.members.push(...newMembers);
+    await classroom.save();
+
+    res.json({ 
+      message: `Added ${newMembers.length} new members to classroom`,
+      classroom 
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

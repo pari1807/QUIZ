@@ -1,6 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { userAPI } from '../../services/api';
+
+// Helper function to get relative time
+const getRelativeTime = (date) => {
+  const now = new Date();
+  const then = new Date(date);
+  const diff = now - then;
+  
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const weeks = Math.floor(days / 7);
+  const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
+  
+  if (seconds < 60) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  if (weeks < 4) return `${weeks}w ago`;
+  if (months < 12) return `${months}mo ago`;
+  return `${years}y ago`;
+};
 
 const ClassroomVideos = () => {
   const { id } = useParams();
@@ -45,14 +69,18 @@ const ClassroomVideos = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="space-y-6"
+    >
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-400 mb-1">Classroom Videos</p>
-          <h1 className="text-2xl md:text-3xl font-semibold text-slate-50">Topic-wise lectures</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-50">Published Playlists</h1>
           <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-            Browse videos that your teacher has shared for this classroom. You can search by topic or video
-            title and open links like YouTube / Google Drive in a new tab.
+            Browse videos that your teacher has published. Open links to watch on YouTube / Google Drive.
           </p>
         </div>
         <form onSubmit={handleSearchSubmit} className="w-full md:w-auto flex gap-2">
@@ -61,121 +89,167 @@ const ClassroomVideos = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search topic or video title"
-            className="flex-1 md:w-64 rounded-lg bg-slate-950/70 border border-slate-800 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/70"
+            className="flex-1 md:w-64 rounded-lg bg-slate-950/70 border border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/70"
           />
           <button
             type="submit"
             disabled={loading}
-            className="px-3 py-2 rounded-lg bg-primary-600 hover:bg-primary-500 text-xs font-medium text-white disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-500 text-sm font-medium text-white disabled:opacity-60 disabled:cursor-not-allowed transition-all"
           >
             {loading ? 'Searching...' : 'Search'}
           </button>
         </form>
       </div>
 
-      {error && (
-        <div className="text-[11px] text-rose-400 bg-rose-500/5 border border-rose-500/30 rounded-md px-3 py-2">
-          {error}
-        </div>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="text-xs text-rose-400 bg-rose-500/5 border border-rose-500/30 rounded-lg px-4 py-3"
+          >
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Topics list */}
         <div className="lg:col-span-1">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-slate-800 rounded-xl p-4 backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold text-slate-50">Topics</h2>
-              {loading && <span className="text-[11px] text-slate-400">Loading...</span>}
-            </div>
-            <div className="space-y-1 max-h-[340px] overflow-y-auto pr-1">
-              {topics.length === 0 && !loading && (
-                <p className="text-xs text-slate-500">No topics or videos available yet.</p>
+              {loading && (
+                <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-primary-500"></div>
               )}
-              {topics.map((t) => (
-                <button
-                  key={t._id || t.id}
-                  onClick={() => setSelectedTopicId(t._id || t.id)}
-                  className={`w-full text-left px-3 py-2 rounded-lg border text-xs transition-colors ${
-                    selectedTopicId === (t._id || t.id)
-                      ? 'bg-slate-900 border-primary-500/70 text-primary-100'
-                      : 'bg-slate-950/60 border-slate-800 hover:bg-slate-900/80'
-                  }`}
-                >
-                  <p className="font-medium text-slate-50">{t.name}</p>
-                  {t.description && (
-                    <p className="text-[11px] text-slate-400 truncate">{t.description}</p>
-                  )}
-                  <p className="text-[10px] text-slate-500 mt-0.5">
-                    {(t.videos || []).length} videos
-                  </p>
-                </button>
-              ))}
             </div>
-          </div>
+            <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+              {topics.length === 0 && !loading && (
+                <p className="text-sm text-slate-500 text-center py-8">No published topics yet.</p>
+              )}
+              <AnimatePresence>
+                {topics.map((t, idx) => (
+                  <motion.button
+                    key={t._id || t.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    onClick={() => setSelectedTopicId(t._id || t.id)}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg border text-sm transition-all ${
+                      selectedTopicId === (t._id || t.id)
+                        ? 'bg-slate-900 border-primary-500/70 text-primary-100 shadow-lg shadow-primary-500/20'
+                        : 'bg-slate-950/60 border-slate-800 hover:bg-slate-900/80 hover:border-slate-700'
+                    }`}
+                  >
+                    <p className="font-medium text-slate-50">{t.name}</p>
+                    {t.description && (
+                      <p className="text-xs text-slate-400 truncate mt-1">{t.description}</p>
+                    )}
+                    <p className="text-xs text-slate-500 mt-1.5">
+                      {(t.videos || []).length} {(t.videos || []).length === 1 ? 'video' : 'videos'}
+                    </p>
+                  </motion.button>
+                ))}
+              </AnimatePresence>
+            </div>
+          </motion.div>
         </div>
 
-        {/* Videos */}
+        {/* Videos Grid */}
         <div className="lg:col-span-2">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 min-h-[260px]">
-            <div className="flex items-center justify-between">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-slate-800 rounded-xl p-5 backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-sm font-semibold text-slate-50">Videos</h2>
-                <p className="text-[11px] text-slate-400">
-                  {selectedTopic ? selectedTopic.name : 'Select a topic from the left to see its videos.'}
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {selectedTopic ? selectedTopic.name : 'Select a topic to view videos'}
                 </p>
               </div>
             </div>
 
             {selectedTopic && (selectedTopic.videos || []).length === 0 && !loading && (
-              <p className="text-xs text-slate-500">No videos have been added for this topic yet.</p>
+              <p className="text-sm text-slate-500 text-center py-8">No videos added for this topic yet.</p>
             )}
 
             {!selectedTopic && topics.length > 0 && (
-              <p className="text-xs text-slate-500">Choose a topic from the left to see its videos.</p>
+              <p className="text-sm text-slate-500 text-center py-8">Choose a topic from the left to see videos.</p>
             )}
 
             {topics.length === 0 && !loading && (
-              <p className="text-xs text-slate-500">Your teacher has not added any videos yet.</p>
+              <div className="text-center py-12">
+                <svg className="mx-auto h-12 w-12 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <p className="text-sm text-slate-400 mt-3">No published topics available yet</p>
+              </div>
             )}
 
-            <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-              {selectedTopic &&
-                (selectedTopic.videos || []).map((v) => (
-                  <div
-                    key={v._id || v.id || v.title + v.url}
-                    className="border border-slate-800 rounded-lg bg-slate-950/70 px-3 py-2 text-xs flex flex-col gap-1"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="font-medium text-slate-50 truncate">{v.title}</p>
-                        {v.description && (
-                          <p className="text-[11px] text-slate-400 truncate">{v.description}</p>
+            {selectedTopic && (selectedTopic.videos || []).length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <AnimatePresence>
+                  {(selectedTopic.videos || []).map((v, idx) => (
+                    <motion.div
+                      key={v._id || v.id || v.title + v.url}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.2, delay: idx * 0.05 }}
+                      className="group relative bg-slate-950/80 border border-slate-800 rounded-lg overflow-hidden hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/10 transition-all"
+                    >
+                      {/* Video Thumbnail */}
+                      <div className="aspect-video bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center relative overflow-hidden">
+                        <svg className="w-12 h-12 text-slate-600 group-hover:text-primary-500 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                        </svg>
+                        <div className="absolute top-2 right-2">
+                          <span className="px-2 py-1 rounded-md text-[10px] bg-slate-950/80 border border-slate-700 text-slate-300">
+                            {v.kind === 'upload' ? 'Uploaded' : 'Link'}
+                          </span>
+                        </div>
+                        {v.createdAt && (
+                          <div className="absolute bottom-2 left-2">
+                            <span className="px-2 py-1 rounded-md text-[10px] bg-slate-950/80 border border-slate-700 text-slate-400">
+                              {getRelativeTime(v.createdAt)}
+                            </span>
+                          </div>
                         )}
                       </div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-900 border border-slate-700 text-slate-300">
-                        {v.kind === 'upload' ? 'Upload' : 'Link'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 mt-1">
-                      <span className="text-[10px] text-slate-500 truncate">
-                        {v.url}
-                      </span>
-                      <a
-                        href={v.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[11px] px-2 py-0.5 rounded-lg border border-primary-500/70 text-primary-200 hover:bg-primary-500/10"
-                      >
-                        Open
-                      </a>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
+
+                      {/* Video Info */}
+                      <div className="p-3">
+                        <h5 className="text-sm font-medium text-slate-100 mb-2 line-clamp-2">{v.title}</h5>
+                        {v.description && (
+                          <p className="text-xs text-slate-400 mb-2 line-clamp-2">{v.description}</p>
+                        )}
+                        <a
+                          href={v.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block w-full text-center text-sm px-3 py-2 rounded-lg bg-primary-600/20 border border-primary-500/50 text-primary-200 hover:bg-primary-500/30 transition-all"
+                        >
+                          Watch Video
+                        </a>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
