@@ -6,6 +6,18 @@ const Quizzes = () => {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchQuizzes = async () => {
+    try {
+      setLoading(true);
+      const { data } = await userAPI.getAvailableQuizzes();
+      setQuizzes(data);
+    } catch (error) {
+      console.error('Failed to load quizzes', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchQuizzes();
   }, []);

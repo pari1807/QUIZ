@@ -324,334 +324,428 @@ const QuizBuilder = () => {
   };
 
 
-  const publishedCount = useMemo(
-    () => allQuizzes.filter((q) => q.status === 'published').length,
-    [allQuizzes]
-  );
+  const stats = useMemo(() => ({
+    total: allQuizzes.length,
+    published: allQuizzes.filter(q => q.status === 'published').length,
+    live: allQuizzes.filter(q => q.type === 'live').length,
+    practice: allQuizzes.filter(q => q.type === 'practice').length,
+  }), [allQuizzes]);
+
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'live', 'practice'
+
+  const filteredQuizzes = useMemo(() => {
+    if (activeTab === 'all') return allQuizzes;
+    return allQuizzes.filter(q => q.type === activeTab);
+  }, [allQuizzes, activeTab]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-semibold text-slate-50 mb-1">Quiz Builder</h1>
-        <p className="text-sm text-slate-400 max-w-xl">
-          Create quizzes for your classrooms. Published quizzes will automatically appear in the student quiz list.
-        </p>
+    <div className="space-y-8 pb-12">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <motion.div
+           initial={{ opacity: 0, x: -20 }}
+           animate={{ opacity: 1, x: 0 }}
+        >
+          <h1 className="text-3xl font-black text-slate-50 tracking-tight">Quiz Management</h1>
+          <p className="text-sm text-slate-400 mt-1">Create, schedule, and analyze student assessments</p>
+        </motion.div>
+        <motion.div 
+           initial={{ opacity: 0, scale: 0.9 }}
+           animate={{ opacity: 1, scale: 1 }}
+           className="flex gap-3"
+        >
+           <button 
+             onClick={() => {
+                setQuizId(null);
+                setForm(initialState);
+                window.scrollTo({ top: 300, behavior: 'smooth' });
+             }}
+             className="px-6 py-2.5 rounded-xl bg-primary-600 text-white font-bold text-sm shadow-lg shadow-primary-500/20 hover:bg-primary-500 transition-all active:scale-95"
+           >
+              + Create New Quiz
+           </button>
+        </motion.div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Left: form + question editor */}
+      {/* Stats Dashboard */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+         <AdminStatCard label="Total Quizzes" value={stats.total} icon="📚" color="primary" />
+         <AdminStatCard label="Live Events" value={stats.live} icon="⚡" color="amber" />
+         <AdminStatCard label="Practice Sets" value={stats.practice} icon="🎯" color="sky" />
+         <AdminStatCard label="Published" value={stats.published} icon="✅" color="emerald" />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* Left: Management Area */}
         <div className="space-y-6 xl:col-span-2">
-          {/** Quiz meta form **/}
-          <form onSubmit={handleSubmit} className="card space-y-4">
-            {/* Title + classroom */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs text-slate-400">Quiz title</label>
-                <input
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  className="input-field"
-                  placeholder="Midterm – DBMS"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-slate-400">Classroom ID (optional)</label>
-                <input
-                  name="classroom"
-                  value={form.classroom}
-                  onChange={handleChange}
-                  className="input-field"
-                  placeholder="Paste classroom ObjectId (optional)"
-                />
-              </div>
+          
+          {/* Quiz Inventory */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="card !p-0 overflow-hidden border border-slate-800"
+          >
+            <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/30 flex items-center justify-between">
+               <div>
+                  <h2 className="text-sm font-bold text-slate-50 uppercase tracking-wider">Quiz Inventory</h2>
+                  <p className="text-[10px] text-slate-500 font-medium">Manage and monitor active assessments</p>
+               </div>
+               <div className="flex bg-slate-800/50 p-1 rounded-lg">
+                  {['all', 'live', 'practice'].map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all uppercase ${
+                        activeTab === tab ? 'bg-primary-500 text-slate-900 shadow-lg' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+               </div>
             </div>
 
-            {/* Description */}
-            <div className="space-y-1">
-              <label className="text-xs text-slate-400">Description</label>
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                rows={3}
-                className="input-field resize-none"
-                placeholder="Short description for students..."
-              />
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-900/50">
+                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-500">Quiz Info</th>
+                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-500">Settings</th>
+                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-500">Status</th>
+                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-500 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/50">
+                  {loadingQuizzes ? (
+                    <tr><td colSpan="4" className="text-center py-12 text-slate-500 text-xs italic">Loading inventory...</td></tr>
+                  ) : filteredQuizzes.length === 0 ? (
+                    <tr><td colSpan="4" className="text-center py-12 text-slate-500 text-xs italic">No quizzes found in this category.</td></tr>
+                  ) : (
+                    filteredQuizzes.map((q) => (
+                      <tr key={q._id} className="hover:bg-slate-800/20 group transition-colors">
+                        <td className="px-6 py-4">
+                           <div className="flex flex-col">
+                              <span className="text-sm font-bold text-slate-100 group-hover:text-primary-400 transition-colors">
+                                {q.title}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-medium truncate max-w-[200px]">
+                                {q.description || 'No description provided'}
+                              </span>
+                           </div>
+                        </td>
+                        <td className="px-6 py-4 text-xs">
+                           <div className="flex flex-col gap-1">
+                              <span className={`w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${
+                                q.type === 'live' ? 'bg-amber-500/10 text-amber-400' : 'bg-sky-500/10 text-sky-400'
+                              }`}>
+                                {q.type}
+                              </span>
+                              <span className="text-slate-400 font-medium">{q.settings?.timeLimit || 0}m limit</span>
+                           </div>
+                        </td>
+                        <td className="px-6 py-4">
+                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              q.status === 'published' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-700/50 text-slate-400'
+                           }`}>
+                              {q.status}
+                           </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                           <div className="flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => navigate(`/admin/quizzes/${q._id}/edit`)}
+                                className="p-1.5 rounded-lg border border-slate-700 hover:border-primary-500 hover:text-primary-400 bg-slate-800/40"
+                                title="Edit Content"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                              </button>
+                              <button
+                                onClick={() => handleEditQuizMeta(q._id)}
+                                className="p-1.5 rounded-lg border border-slate-700 hover:border-amber-500 hover:text-amber-400 bg-slate-800/40"
+                                title="Edit Settings"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteQuiz(q._id)}
+                                className="p-1.5 rounded-lg border border-slate-700 hover:border-rose-500 hover:text-rose-400 bg-slate-800/40"
+                                title="Delete Quiz"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                           </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
+          </motion.div>
 
-            {/* Type + time */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs text-slate-400">Type</label>
-                <select
-                  name="type"
-                  value={form.type}
-                  onChange={handleChange}
-                  className="input-field"
-                >
-                  <option value="practice">Practice</option>
-                  <option value="live">Live (Scheduled)</option>
-                </select>
+          {/** Creation / Update Section **/}
+          <motion.div 
+             initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+             id="create-quiz-section"
+             className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          >
+            <div className="card space-y-4 border border-primary-500/10 bg-primary-500/5">
+              <div className="flex items-center gap-3 mb-2">
+                 <div className="h-8 w-8 rounded-lg bg-primary-500 flex items-center justify-center text-slate-900 font-bold">
+                    {quizId ? '✎' : '+'}
+                 </div>
+                 <h2 className="text-sm font-bold text-slate-50 uppercase tracking-widest">
+                    {quizId ? 'Update Metadata' : 'Create Context'}
+                 </h2>
               </div>
-              {form.type === 'live' && (
+
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-400">Start time</label>
+                  <label className="text-[10px] text-slate-500 font-black uppercase">Quiz Title</label>
                   <input
-                    type="datetime-local"
-                    name="startTime"
-                    value={form.startTime}
+                    name="title"
+                    value={form.title}
                     onChange={handleChange}
-                    className="input-field"
+                    className="input-field !bg-slate-950/40"
+                    placeholder="e.g. Data Structures Finale"
                   />
                 </div>
-              )}
-              <div className="space-y-1">
-                <label className="text-xs text-slate-400">Time limit (minutes)</label>
-                <input
-                  type="number"
-                  min={1}
-                  name="timeLimit"
-                  value={form.timeLimit}
-                  onChange={handleChange}
-                  className="input-field"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={loading || !!quizId}
-                className="btn-primary text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Creating...' : quizId ? 'Quiz Created' : 'Create Quiz'}
-              </button>
-            </div>
-          </form>
-
-          {/** Attachments + MCQ editor **/}
-          {quizId && (
-            <div className="card space-y-6">
-              <div className="flex flex-col gap-1">
-                <p className="text-xs text-slate-400">Quiz ID</p>
-                <p className="text-sm font-medium text-slate-100 break-all">{quizId}</p>
-              </div>
-
-              {/* Attachments */}
-              <div className="space-y-3">
-                <h2 className="text-sm font-semibold text-slate-50">Upload PDF / Image</h2>
-                <div className="flex flex-col md:flex-row gap-3 md:items-center">
+                
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-500 font-black uppercase">Classroom Reference</label>
                   <input
-                    type="file"
-                    accept="application/pdf,image/*"
-                    onChange={(e) => setAttachmentFile(e.target.files?.[0] || null)}
-                    className="input-field"
+                    name="classroom"
+                    value={form.classroom}
+                    onChange={handleChange}
+                    className="input-field !bg-slate-950/40 text-xs"
+                    placeholder="Classroom ObjectId"
                   />
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={handleUploadAttachment}
-                    className="btn-secondary text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {loading ? 'Uploading...' : 'Upload'}
-                  </button>
                 </div>
-                {!!quizMeta?.attachments?.length && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-slate-400">Attachments</p>
-                    <ul className="space-y-1 text-sm text-slate-200">
-                      {quizMeta.attachments.map((a) => (
-                        <li key={a.publicId || a.url}>
-                          <a
-                            href={a.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-primary-200 hover:underline"
-                          >
-                            {a.fileName || a.url}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-500 font-black uppercase">Short Description</label>
+                  <textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    rows={2}
+                    className="input-field !bg-slate-950/40 resize-none text-xs"
+                    placeholder="Objectives and syllabus coverage..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-500 font-black uppercase">Type</label>
+                    <select
+                      name="type"
+                      value={form.type}
+                      onChange={handleChange}
+                      className="input-field !bg-slate-950/40 text-xs"
+                    >
+                      <option value="practice">Practice</option>
+                      <option value="live">Live (Scheduled)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-500 font-black uppercase">Limit (Mins)</label>
+                    <input
+                      type="number"
+                      name="timeLimit"
+                      value={form.timeLimit}
+                      onChange={handleChange}
+                      className="input-field !bg-slate-950/40 text-xs"
+                    />
+                  </div>
+                </div>
+
+                {form.type === 'live' && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    className="space-y-1"
+                  >
+                    <label className="text-[10px] text-slate-500 font-black uppercase">Start Schedule</label>
+                    <input
+                      type="datetime-local"
+                      name="startTime"
+                      value={form.startTime}
+                      onChange={handleChange}
+                      className="input-field !bg-slate-950/40 text-xs"
+                    />
+                  </motion.div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading || (!!quizId && !quizMeta)}
+                  className="btn-primary w-full py-2.5 text-xs font-black uppercase tracking-widest shadow-xl shadow-primary-500/20"
+                >
+                  {loading ? 'Processing...' : quizId ? 'Update Metadata' : 'Initialize Quiz'}
+                </button>
+              </form>
+            </div>
+
+            {/* Sub-Actions for initialized quiz */}
+            <div className={`space-y-6 ${!quizId ? 'opacity-30 pointer-events-none transition-opacity' : ''}`}>
+               <div className="card space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-sky-500 flex items-center justify-center text-slate-900 font-bold">↑</div>
+                    <h2 className="text-sm font-bold text-slate-50 uppercase tracking-widest">Resources</h2>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-[10px] text-slate-400 font-medium">Add PDF reference or diagrams for students.</p>
+                    <input
+                      type="file"
+                      id="quiz-attachment"
+                      accept="application/pdf,image/*"
+                      onChange={(e) => setAttachmentFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                    />
+                    <label 
+                      htmlFor="quiz-attachment"
+                      className="block w-full border-2 border-dashed border-slate-700 rounded-xl p-4 text-center cursor-pointer hover:border-sky-500/50 hover:bg-sky-500/5 transition-all"
+                    >
+                       <span className="text-xs text-slate-400">{attachmentFile ? attachmentFile.name : 'Select PDF or Image'}</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleUploadAttachment}
+                      disabled={!attachmentFile || loading}
+                      className="w-full py-2 rounded-lg bg-slate-800 text-[10px] font-black uppercase text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+                    >
+                      {loading ? 'Uploading...' : 'Upload Attachment'}
+                    </button>
+                  </div>
+               </div>
+
+               <div className="card space-y-4 border border-emerald-500/10 bg-emerald-500/5">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-900 font-bold">🛰</div>
+                    <h2 className="text-sm font-bold text-slate-50 uppercase tracking-widest">Finalize</h2>
+                  </div>
+                  <div className="space-y-3">
+                     <p className="text-[10px] text-slate-400 font-medium">Review context and questions before broadcasting.</p>
+                     <div className="flex gap-2">
+                        <button
+                          onClick={() => navigate(`/admin/quizzes/${quizId}/edit`)}
+                          className="flex-1 py-3 rounded-xl bg-slate-800 text-[10px] font-black uppercase text-slate-100 hover:bg-slate-700"
+                        >
+                           Edit Questions
+                        </button>
+                        <button
+                          onClick={handlePublish}
+                          disabled={loading}
+                          className="flex-1 py-3 rounded-xl bg-emerald-600 text-[10px] font-black uppercase text-white hover:bg-emerald-500 shadow-lg shadow-emerald-500/20"
+                        >
+                           Go Live
+                        </button>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Right: Sidebar Content View */}
+        <div className="space-y-6">
+           {/* Detailed Progress / Question List */}
+           <motion.div 
+             initial={{ opacity: 0, x: 20 }}
+             animate={{ opacity: 1, x: 0 }}
+             className="card !p-0 overflow-hidden border border-slate-800"
+           >
+              <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/30 flex items-center justify-between">
+                 <h2 className="text-[11px] font-black text-slate-50 uppercase tracking-tighter">Content Overview</h2>
+                 <span className="text-[10px] font-bold text-slate-500">{questionsList.length} Items</span>
+              </div>
+              
+              <div className="p-4 space-y-2 max-h-[600px] overflow-y-auto custom-scrollbar">
+                {quizId ? (
+                   questionsList.length === 0 ? (
+                      <div className="text-center py-12">
+                         <div className="text-4xl mb-2 opacity-20">📝</div>
+                         <p className="text-xs text-slate-500 italic">No questions in this quiz context.</p>
+                         <button 
+                           onClick={() => navigate(`/admin/quizzes/${quizId}/edit`)}
+                           className="mt-4 text-[10px] font-bold text-primary-400 uppercase underline"
+                         >
+                            Add Questions Now
+                         </button>
+                      </div>
+                   ) : (
+                      questionsList.map((q, idx) => (
+                        <div key={q._id} className="p-3 rounded-xl bg-slate-800/20 border border-slate-800/50 hover:border-slate-700 transition-all flex gap-3">
+                           <div className="h-6 w-6 rounded-md bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-500">
+                              {idx + 1}
+                           </div>
+                           <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-bold text-slate-200 line-clamp-2">{q.text}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                 <span className="text-[9px] font-black text-slate-500 uppercase">{q.options.length} Options</span>
+                                 <span className="text-[9px] font-black text-primary-500 uppercase">{q.marks} Marks</span>
+                              </div>
+                           </div>
+                        </div>
+                      ))
+                   )
+                ) : (
+                  <div className="text-center py-12">
+                     <p className="text-xs text-slate-500 italic mb-4">Initialize or select a quiz context to view structured content.</p>
+                     <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden">
+                        <div className="h-full w-1/3 bg-slate-800" />
+                     </div>
                   </div>
                 )}
               </div>
+           </motion.div>
 
-              {/* Question editing moved to dedicated page */}
-              <div className="space-y-2">
-                <h2 className="text-sm font-semibold text-slate-50">Questions</h2>
-                <p className="text-xs text-slate-400">
-                  To add or edit questions for this quiz, open the dedicated edit page.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/admin/quizzes/${quizId}/edit`)}
-                  className="btn-secondary text-xs md:text-sm"
-                >
-                  Edit questions for this quiz
-                </button>
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={handlePublish}
-                  className="btn-primary text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Publishing...' : 'Publish Quiz'}
-                </button>
-              </div>
-            </div>
-          )}
+           {/* Quiz Selection Info */}
+           {quizId && quizMeta && (
+             <motion.div 
+               initial={{ opacity: 0, scale: 0.95 }}
+               animate={{ opacity: 1, scale: 1 }}
+               className="card bg-gradient-to-br from-indigo-900/20 to-primary-900/20 border-primary-500/20 p-6"
+             >
+                <div className="flex items-center justify-between mb-4">
+                   <h3 className="text-xs font-black text-primary-400 uppercase tracking-widest">Active Context</h3>
+                   <button onClick={() => setQuizId(null)} className="text-slate-500 hover:text-slate-300">✕</button>
+                </div>
+                <div className="space-y-4">
+                   <div>
+                      <p className="text-lg font-bold text-slate-100">{quizMeta.title}</p>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase">{quizMeta.type} • ID: {quizId.slice(-6)}</p>
+                   </div>
+                   <div className="flex flex-wrap gap-2">
+                      <span className="px-2 py-1 rounded bg-slate-950/60 text-[9px] font-black text-slate-400">CLASS: {quizMeta.classroom?.name || 'GEN'}</span>
+                      <span className="px-2 py-1 rounded bg-slate-950/60 text-[9px] font-black text-slate-400">QUES: {questionsList.length}</span>
+                      <span className="px-2 py-1 rounded bg-slate-950/60 text-[9px] font-black text-slate-400">STATUS: {quizMeta.status}</span>
+                   </div>
+                </div>
+             </motion.div>
+           )}
         </div>
+      </div>
 
-        {/* Right: sidebar lists */}
-        <motion.div
-          className="space-y-4"
-          initial={{ opacity: 0, x: 16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.35 }}
-        >
-          {/* Quizzes list */}
-          <div className="card space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-50">Your quizzes</h2>
-                <p className="text-xs text-slate-400">
-                  {loadingQuizzes
-                    ? 'Loading quizzes...'
-                    : `${publishedCount} published / ${allQuizzes.length} total`}
-                </p>
-              </div>
-            </div>
-
-            {loadingQuizzes ? (
-              <p className="text-xs text-slate-500">Loading quizzes...</p>
-            ) : allQuizzes.length === 0 ? (
-              <p className="text-xs text-slate-500">No quizzes created yet.</p>
-            ) : (
-              <div className="space-y-1 max-h-[320px] overflow-y-auto">
-                {allQuizzes.map((q) => (
-                  <div
-                    key={q._id}
-                    className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs text-slate-200"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{q.title}</p>
-                      <p className="text-[11px] text-slate-400">
-                        Status: <span className="capitalize">{q.status}</span> • Type: {q.type}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 ml-3">
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/admin/quizzes/${q._id}/edit`)}
-                        className="px-2 py-1 rounded-md border border-slate-700 text-[11px] hover:border-primary-500/70 hover:text-primary-200"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteQuiz(q._id)}
-                        className="px-2 py-1 rounded-md border border-rose-600/80 text-[11px] text-rose-200 hover:bg-rose-600/10"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Questions for selected quiz */}
-          <div className="card space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-50">
-                  Questions{quizMeta?.title ? ` – ${quizMeta.title}` : ''}
-                </h2>
-                <p className="text-xs text-slate-400">
-                  {quizId
-                    ? questionsList.length
-                      ? `${questionsList.length} questions in this quiz`
-                      : 'No questions added yet.'
-                    : 'Select a quiz to view its questions.'}
-                </p>
-              </div>
-              {questionsList.length > 0 && (
-                <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                  <span>Go to</span>
-                  <select
-                    className="input-field px-2 py-1 text-[11px] max-w-[80px]"
-                    value={editingQuestionId || ''}
-                    onChange={(e) => {
-                      const q = questionsList.find((qq) => qq._id === e.target.value);
-                      if (q) handleSelectQuestion(q);
-                    }}
-                  >
-                    <option value="">Q #</option>
-                    {questionsList.map((q, index) => (
-                      <option key={q._id} value={q._id}>
-                        Q{index + 1}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            {quizId ? (
-              questionsList.length === 0 ? (
-                <p className="text-xs text-slate-500">Add your first question to see it here.</p>
-              ) : (
-                <div className="space-y-1 max-h-[320px] overflow-y-auto">
-                  {questionsList.map((q, index) => {
-                    const active = editingQuestionId === q._id;
-                    return (
-                      <motion.button
-                        key={q._id}
-                        type="button"
-                        onClick={() => handleSelectQuestion(q)}
-                        className={`w-full text-left px-3 py-2 rounded-lg border text-xs transition-colors ${
-                          active
-                            ? 'border-primary-500/70 bg-primary-500/10 text-primary-100'
-                            : 'border-slate-800 bg-slate-900/60 text-slate-200 hover:border-primary-500/40'
-                        }`}
-                        whileHover={{ scale: 1.01 }}
-                      >
-                        <p className="font-medium line-clamp-1">
-                          Question {index + 1}: {q.text}
-                        </p>
-                        <p className="text-[11px] text-slate-400 mt-0.5">Marks: {q.marks || 1}</p>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              )
-            ) : (
-              <p className="text-xs text-slate-500">Choose a quiz from the list above to manage its questions.</p>
-            )}
-          </div>
-        </motion.div>
-      {/* Delete confirmation modal */}
+      {/* Delete Confirmation Modal */}
       {pendingDeleteQuiz && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm">
-          <div className="card max-w-sm w-full space-y-4 border border-slate-800 shadow-xl">
-            <h2 className="text-sm font-semibold text-slate-50">Delete quiz?</h2>
-            <p className="text-xs text-slate-400">
-              This will remove the quiz for students. You can create it again later if needed.
-            </p>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setPendingDeleteQuiz(null)}
-                className="px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-200 hover:border-slate-500"
-              >
-                Cancel
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="card max-w-sm w-full space-y-6 border border-rose-500/20 shadow-2xl shadow-rose-500/10"
+          >
+            <div className="text-center">
+               <div className="h-16 w-16 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+               </div>
+               <h2 className="text-xl font-bold text-slate-50">Permanent Deletion</h2>
+               <p className="text-sm text-slate-400 mt-2">
+                 Are you sure you want to remove this quiz? This action is irreversible and will purge all student attempts.
+               </p>
+            </div>
+            <div className="flex flex-col gap-2">
               <button
                 type="button"
                 onClick={async () => {
@@ -659,14 +753,13 @@ const QuizBuilder = () => {
                   setPendingDeleteQuiz(null);
                   try {
                     await adminAPI.deleteQuiz(id);
-                    toast.success('Quiz deleted');
+                    toast.success('Quiz deleted successfully');
                     setAllQuizzes((prev) => prev.filter((q) => q._id !== id));
                     if (quizId === id) {
                       setForm(initialState);
                       setQuizId(null);
                       setQuizMeta(null);
                       setQuestionsList([]);
-                      setQuestion({ text: '', options: ['', '', '', ''], correctIndex: 0, marks: 1 });
                       setEditingQuestionId(null);
                       setAttachmentFile(null);
                     }
@@ -674,16 +767,43 @@ const QuizBuilder = () => {
                     toast.error(error.response?.data?.message || 'Failed to delete quiz');
                   }
                 }}
-                className="px-3 py-1.5 rounded-lg border border-rose-600/80 bg-rose-600/10 text-xs text-rose-200 hover:bg-rose-600/20"
+                className="w-full py-3 rounded-xl bg-rose-600 text-sm font-bold text-white hover:bg-rose-500 shadow-lg shadow-rose-500/20"
               >
-                Delete
+                Yes, Delete Permanently
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingDeleteQuiz(null)}
+                className="w-full py-3 rounded-xl bg-slate-800 text-sm font-bold text-slate-300 hover:bg-slate-700"
+              >
+                No, Keep Quiz
               </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
-      </div>
     </div>
+  );
+};
+
+const AdminStatCard = ({ label, value, icon, color }) => {
+  const themes = {
+    primary: 'text-primary-400 border-primary-500/20 bg-primary-500/5',
+    amber: 'text-amber-400 border-amber-500/20 bg-amber-500/5',
+    sky: 'text-sky-400 border-sky-500/20 bg-sky-500/5',
+    emerald: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5',
+  };
+  return (
+    <motion.div 
+      whileHover={{ y: -4 }}
+      className={`card p-5 border flex items-center justify-between ${themes[color] || 'border-slate-800 bg-slate-800/10'}`}
+    >
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{label}</p>
+        <p className="text-2xl font-black text-slate-50">{value}</p>
+      </div>
+      <div className="text-3xl opacity-80">{icon}</div>
+    </motion.div>
   );
 };
 
