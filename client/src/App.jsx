@@ -15,7 +15,6 @@ import Quizzes from './pages/User/Quizzes';
 import QuizTaking from './pages/User/QuizTaking';
 import QuizResults from './pages/User/QuizResults';
 import Discussions from './pages/User/Discussions';
-import Assignments from './pages/User/Assignments';
 import Profile from './pages/User/Profile';
 import Whiteboard from './pages/User/Whiteboard';
 import UserAnnouncements from './pages/User/Announcements';
@@ -133,7 +132,6 @@ function App() {
           <Route path="quizzes/:id/take" element={<QuizTaking />} />
           <Route path="quizzes/:id/results" element={<QuizResults />} />
           <Route path="discussions" element={<Discussions />} />
-          <Route path="assignments" element={<Assignments />} />
           <Route path="announcements" element={<UserAnnouncements />} />
           <Route path="classrooms" element={<UserClassrooms />} />
           <Route path="classrooms/:id/videos" element={<ClassroomVideos />} />

@@ -10,7 +10,6 @@ const userLinks = [
   { to: '/notes', label: 'Notes' },
   { to: '/quizzes', label: 'Quizzes' },
   { to: '/discussions', label: 'Discussions' },
-  { to: '/assignments', label: 'Assignments' },
   { to: '/classrooms', label: 'Classrooms' },
   { to: '/announcements', label: 'Announcements' },
   { to: '/profile', label: 'Profile' },

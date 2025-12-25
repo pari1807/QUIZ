@@ -1,11 +1,28 @@
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { userAPI } from '../../services/api';
 
-const PRIORITY_COLORS = {
-  low: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/40',
-  medium: 'bg-sky-500/10 text-sky-300 border-sky-500/40',
-  high: 'bg-amber-500/10 text-amber-300 border-amber-500/40',
-  urgent: 'bg-rose-500/10 text-rose-300 border-rose-500/40',
+const PRIORITY_THEMES = {
+  low: {
+    badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    icon: '🟢',
+    glow: 'shadow-emerald-500/10'
+  },
+  medium: {
+    badge: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+    icon: '🔵',
+    glow: 'shadow-sky-500/10'
+  },
+  high: {
+    badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    icon: '🟠',
+    glow: 'shadow-amber-500/10'
+  },
+  urgent: {
+    badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+    icon: '🔴',
+    glow: 'shadow-rose-500/10'
+  },
 };
 
 const Announcements = () => {
@@ -40,70 +57,116 @@ const Announcements = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-semibold text-slate-50">Announcements</h1>
-        <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-          Important updates from your administrators and teachers. You can only read these messages.
-        </p>
-      </div>
-
-      <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 max-h-[620px] overflow-y-auto">
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-sm font-semibold text-slate-50">Recent announcements</h2>
+    <div className="max-w-4xl mx-auto space-y-10 py-4">
+      {/* Immersive Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-800 pb-8">
+        <div className="space-y-2">
           <div className="flex items-center gap-3">
-            {loading && <span className="text-[11px] text-slate-400">Loading...</span>}
-            <button
-              onClick={load}
-              disabled={loading}
-              className="text-[11px] px-2 py-1 rounded-lg border border-slate-700 text-slate-300 hover:border-primary-500/70 hover:text-primary-200 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              Refresh
-            </button>
+             <div className="h-2 w-10 bg-primary-500 rounded-full" />
+             <span className="text-[10px] font-black text-primary-500 uppercase tracking-[0.3em]">Institutional Feed</span>
           </div>
+          <h1 className="text-4xl md:text-5xl font-black text-slate-50 tracking-tighter">Student Bulletin</h1>
+          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest max-w-xl">
+             Official updates, critical alerts, and campus-wide communications
+          </p>
         </div>
 
-        {error && (
-          <div className="text-[11px] text-rose-400 bg-rose-500/5 border border-rose-500/30 rounded-md px-3 py-2">
-            {error}
+        <button
+          onClick={load}
+          disabled={loading}
+          className="group relative px-6 py-2.5 rounded-full bg-slate-900 border border-slate-800 text-[10px] font-black text-slate-400 hover:text-white transition-all overflow-hidden"
+        >
+          <div className="relative z-10 flex items-center gap-2">
+            {loading ? (
+               <div className="h-3 w-3 border-2 border-slate-400/20 border-t-slate-400 rounded-full animate-spin" />
+            ) : 'REFRESH FEED'}
+          </div>
+          <div className="absolute inset-0 bg-primary-500/0 group-hover:bg-primary-500/5 transition-colors" />
+        </button>
+      </div>
+
+      {error && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-[10px] text-rose-400 font-black uppercase tracking-widest text-center"
+        >
+          {error}
+        </motion.div>
+      )}
+
+      {/* Feed Container */}
+      <div className="space-y-6">
+        {announcements.length === 0 && !loading && !error && (
+          <div className="py-32 text-center rounded-[60px] bg-slate-900/10 border border-dashed border-slate-800/50">
+             <div className="text-6xl mb-6 grayscale opacity-20">📭</div>
+             <p className="text-sm font-black text-slate-600 uppercase tracking-[0.2em]">No Active Bulletins at this time</p>
+             <p className="text-[10px] text-slate-700 font-bold uppercase mt-2 italic">Check back later for institutional updates</p>
           </div>
         )}
 
-        {announcements.length === 0 && !loading && !error && (
-          <p className="text-xs text-slate-500">No announcements available right now.</p>
-        )}
+        <AnimatePresence mode="popLayout">
+          {announcements.map((a, i) => {
+            const theme = PRIORITY_THEMES[a.priority] || PRIORITY_THEMES.medium;
+            const date = a.publishAt || a.createdAt;
 
-        <div className="space-y-3">
-          {announcements.map((a) => {
-            const badgeClass = PRIORITY_COLORS[a.priority] || PRIORITY_COLORS.medium;
-            const createdAt = a.publishAt || a.createdAt;
             return (
-              <div
+              <motion.div
                 key={a._id}
-                className="border border-slate-800 rounded-lg bg-slate-950/60 px-4 py-3 flex flex-col gap-1"
+                initial={{ opacity: 0, y: 30, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className="group bg-slate-900/40 border border-slate-800 p-8 rounded-[40px] backdrop-blur-xl hover:border-slate-700 transition-all shadow-2xl shadow-black/20"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] border ${badgeClass}`}>
-                      {a.priority?.toUpperCase?.() || 'MEDIUM'}
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                       <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border ${theme.badge} shadow-lg ${theme.glow}`}>
+                          {theme.icon} {a.priority}
+                       </span>
+                       {a.isBroadcast && (
+                        <span className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-slate-800 border border-slate-700 text-slate-500">
+                          📡 BROADCAST
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-800/50 px-3 py-1.5 rounded-xl">
+                      {new Date(date).toLocaleString([], { dateStyle: 'long', timeStyle: 'short' })}
                     </span>
-                    {a.isBroadcast && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-primary-500/10 text-primary-200 border border-primary-500/40">
-                        Broadcast
-                      </span>
-                    )}
                   </div>
-                  <span className="text-[11px] text-slate-400 whitespace-nowrap">
-                    {createdAt ? new Date(createdAt).toLocaleString() : ''}
-                  </span>
+
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-black text-slate-50 tracking-tight leading-none group-hover:text-primary-400 transition-colors">
+                      {a.title}
+                    </h2>
+                    <p className="text-sm text-slate-400 leading-relaxed font-medium whitespace-pre-wrap break-words max-w-3xl border-l-2 border-slate-800 pl-6 py-2 italic group-hover:border-primary-500/30 transition-colors">
+                      {a.content}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4 pt-4 border-t border-slate-800/50">
+                     <div className="h-10 w-10 rounded-2xl bg-slate-800 flex items-center justify-center text-lg shadow-inner">
+                        🛡️
+                     </div>
+                     <div>
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Authenticated By</p>
+                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-tight">Institutional Administration</p>
+                     </div>
+                  </div>
                 </div>
-                <h3 className="text-sm font-semibold text-slate-50 mt-1">{a.title}</h3>
-                <p className="text-xs text-slate-300 whitespace-pre-wrap mt-1">{a.content}</p>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </AnimatePresence>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+      `}} />
     </div>
   );
 };
