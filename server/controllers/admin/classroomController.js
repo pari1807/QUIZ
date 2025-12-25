@@ -276,11 +276,29 @@ export const addClassroomTopicVideo = async (req, res) => {
       finalUrl = finalUrl.trim();
     } else if (kind === 'upload') {
       if (!req.file) {
+        console.log('❌ No file in request');
         return res.status(400).json({ message: 'Please upload a video file' });
       }
 
-      const fileData = await fileService.uploadFile(req.file, 'classroom-videos');
-      finalUrl = fileData.url;
+      console.log('📁 File received:', {
+        filename: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype,
+        path: req.file.path
+      });
+
+      try {
+        console.log('📤 Uploading to ImageKit...');
+        const fileData = await fileService.uploadFile(req.file, 'classroom-videos');
+        console.log('✅ ImageKit upload successful:', fileData.url);
+        finalUrl = fileData.url;
+      } catch (uploadError) {
+        console.error('❌ ImageKit upload failed:', uploadError);
+        return res.status(500).json({ 
+          message: 'Failed to upload video file',
+          error: uploadError.message 
+        });
+      }
     }
 
     const videoId = new mongoose.Types.ObjectId();
@@ -293,13 +311,15 @@ export const addClassroomTopicVideo = async (req, res) => {
       createdAt: new Date(),
     };
 
-    if (!topic.videos) topic.videos = [];
-    topic.videos.unshift(video);
+    topic.videos = topic.videos || [];
+    topic.videos.push(video);
 
     await classroom.save();
 
+    console.log('✅ Video added to database:', video.title);
     res.status(201).json(video);
   } catch (error) {
+    console.error('❌ Error in addClassroomTopicVideo:', error);
     res.status(500).json({ message: error.message });
   }
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminAPI } from '../../services/api';
 
@@ -32,6 +32,7 @@ const Classrooms = () => {
   const [expandedTopicId, setExpandedTopicId] = useState('');
 
   const [error, setError] = useState('');
+  const fileInputRef = useRef(null);
 
   const selectedClassroom = classrooms.find((c) => c._id === selectedClassroomId);
 
@@ -157,8 +158,13 @@ const Classrooms = () => {
       setVideoDescription('');
       setVideoUrl('');
       setVideoFile(null);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to add video');
+      console.error('Video upload error:', err);
     } finally {
       setAddingVideoForTopicId('');
     }
@@ -506,20 +512,13 @@ const Classrooms = () => {
                                   )}
 
                                   {videoKind === 'upload' && (
-                                    <label className="flex items-center justify-center gap-2 text-sm text-slate-300 cursor-pointer border-2 border-dashed border-slate-700 rounded-lg p-6 bg-slate-900/40 hover:bg-slate-900/70 hover:border-primary-500/50 transition-all">
-                                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                      </svg>
-                                      <span className={!videoFile ? "text-slate-400" : "text-emerald-400"}>
-                                        {videoFile ? `Selected: ${videoFile.name}` : 'Click to upload video file'}
-                                      </span>
-                                      <input
-                                        type="file"
-                                        accept="video/*"
-                                        onChange={handleVideoFileChange}
-                                        className="hidden"
-                                      />
-                                    </label>
+                                    <input
+                                      ref={fileInputRef}
+                                      type="file"
+                                      accept="video/*"
+                                      onChange={handleVideoFileChange}
+                                      className="w-full rounded-lg bg-slate-900/70 border border-slate-800 px-3 py-2 text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-primary-600 file:text-white hover:file:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/70"
+                                    />
                                   )}
                                 </form>
                               </div>
