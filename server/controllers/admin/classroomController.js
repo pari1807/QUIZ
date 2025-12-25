@@ -374,3 +374,40 @@ export const removeClassroomTopicVideo = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Publish/Unpublish classroom topic
+// @route   PUT /api/admin/classrooms/:id/topics/:topicId/publish
+// @access  Private/Admin
+export const publishClassroomTopic = async (req, res) => {
+  try {
+    const { published } = req.body;
+    
+    if (typeof published !== 'boolean') {
+      return res.status(400).json({ message: 'Published field must be a boolean' });
+    }
+
+    const classroom = await Classroom.findById(req.params.id);
+
+    if (!classroom) {
+      return res.status(404).json({ message: 'Classroom not found' });
+    }
+
+    const topic = (classroom.topics || []).find(
+      (t) => t._id?.toString() === req.params.topicId || t.id?.toString() === req.params.topicId
+    );
+
+    if (!topic) {
+      return res.status(404).json({ message: 'Topic not found' });
+    }
+
+    topic.published = published;
+    await classroom.save();
+
+    res.json({ 
+      message: `Topic ${published ? 'published' : 'unpublished'} successfully`,
+      topic 
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

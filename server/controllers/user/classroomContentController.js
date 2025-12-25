@@ -1,14 +1,14 @@
 import Classroom from '../../models/Classroom.js';
 
-// @desc    Get classroom topics with videos for a student (read-only)
-// @route   GET /api/classrooms/:id/topics
-// @access  Private (must be a member of classroom)
+// @desc    Get classroom topics with videos (read-only for students)
+// @route   GET /api/classrooms/:classroomId/topics
+// @access  Private
 export const getUserClassroomTopicsWithVideos = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { classroomId } = req.params;
     const { search = '' } = req.query;
 
-    const classroom = await Classroom.findById(id);
+    const classroom = await Classroom.findById(classroomId);
 
     if (!classroom) {
       return res.status(404).json({ message: 'Classroom not found' });
@@ -23,7 +23,8 @@ export const getUserClassroomTopicsWithVideos = async (req, res) => {
       return res.status(403).json({ message: 'You are not a member of this classroom' });
     }
 
-    let topics = classroom.topics || [];
+    // Filter only published topics for regular users
+    let topics = (classroom.topics || []).filter(topic => topic.published === true);
 
     if (search) {
       const q = search.toLowerCase();

@@ -174,6 +174,24 @@ const Classrooms = () => {
     }
   };
 
+  const handlePublishTopic = async (topicId, currentlyPublished) => {
+    if (!selectedClassroomId) return;
+    try {
+      setError('');
+      const newPublishedState = !currentlyPublished;
+      await adminAPI.publishClassroomTopic(selectedClassroomId, topicId, newPublishedState);
+      setTopics((prev) =>
+        prev.map((t) =>
+          (t._id || t.id) === topicId
+            ? { ...t, published: newPublishedState }
+            : t
+        )
+      );
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to publish/unpublish topic');
+    }
+  };
+
   const startEditTopic = (topic) => {
     const id = topic._id || topic.id;
     setEditingTopicId(id);
@@ -324,9 +342,18 @@ const Classrooms = () => {
                             )}
                           </div>
                           <div className="flex flex-col items-end gap-2">
-                            <span className="px-3 py-1 rounded-full text-xs bg-slate-800/80 border border-slate-700 text-slate-300">
-                              {(t.videos || []).length} {(t.videos || []).length === 1 ? 'video' : 'videos'}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="px-3 py-1 rounded-full text-xs bg-slate-800/80 border border-slate-700 text-slate-300">
+                                {(t.videos || []).length} {(t.videos || []).length === 1 ? 'video' : 'videos'}
+                              </span>
+                              <span className={`px-3 py-1 rounded-full text-xs border ${
+                                t.published
+                                  ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400'
+                                  : 'bg-amber-500/10 border-amber-500/50 text-amber-400'
+                              }`}>
+                                {t.published ? '✓ Published' : 'Draft'}
+                              </span>
+                            </div>
                             <div className="flex gap-2">
                               {editingTopicId === id ? (
                                 <>
@@ -360,6 +387,17 @@ const Classrooms = () => {
                                     className="px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-200 hover:bg-slate-800/80 transition-all"
                                   >
                                     Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePublishTopic(id, t.published)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                                      t.published
+                                        ? 'bg-amber-500/10 border border-amber-500/50 text-amber-400 hover:bg-amber-500/20'
+                                        : 'bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20'
+                                    }`}
+                                  >
+                                    {t.published ? 'Unpublish' : 'Publish'}
                                   </button>
                                   <button
                                     type="button"

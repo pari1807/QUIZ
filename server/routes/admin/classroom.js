@@ -13,6 +13,7 @@ import {
   addClassroomTopicVideo,
   deleteClassroomTopic,
   removeClassroomTopicVideo,
+  publishClassroomTopic,
 } from '../../controllers/admin/classroomController.js';
 import upload from '../../middleware/upload.js';
 import { protect, authorize } from '../../middleware/auth.js';
@@ -35,6 +36,7 @@ router.delete('/:id/members/:userId', removeMember);
 router.get('/:id/topics', getClassroomTopics);
 router.post('/:id/topics', createClassroomTopic);
 router.delete('/:id/topics/:topicId', deleteClassroomTopic);
+router.put('/:id/topics/:topicId/publish', publishClassroomTopic);
 
 router.post(
   '/:id/topics/:topicId/videos',
