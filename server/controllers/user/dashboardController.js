@@ -267,7 +267,18 @@ export const getDashboardOverview = async (req, res) => {
       deletedAt: null 
     });
 
-    const totalContent = totalQuizzesAvailable + totalNotesAvailable;
+    // Count total videos from published playlists in all classrooms
+    const classroomsWithVideos = await Classroom.find({ deletedAt: null });
+    let totalVideosAvailable = 0;
+    classroomsWithVideos.forEach(classroom => {
+      (classroom.topics || []).forEach(topic => {
+        if (topic.published) {
+          totalVideosAvailable += (topic.videos || []).length;
+        }
+      });
+    });
+
+    const totalContent = totalQuizzesAvailable + totalNotesAvailable + totalVideosAvailable;
 
     // 2. User Consumption
     // Unique quizzes attempted (at least submitted once)
