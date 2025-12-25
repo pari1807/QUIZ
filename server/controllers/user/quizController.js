@@ -222,7 +222,7 @@ export const submitQuiz = async (req, res) => {
     await gamificationService.awardXP(req.user._id, xpPoints, 'Quiz completed');
 
     // Update real-time leaderboard score
-    await performanceService.updateScore(req.user._id, attempt.score);
+    await performanceService.updateScore(req.user._id, attempt.score, `Completed ${attempt.quiz?.title || 'Quiz'}`);
 
     // Check for badges
     const userAttempts = await QuizAttempt.countDocuments({

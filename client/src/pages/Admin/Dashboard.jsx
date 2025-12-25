@@ -15,14 +15,19 @@ const Dashboard = () => {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [topPerformers, setTopPerformers] = useState([]);
+  const [recentActivity, setRecentActivity] = useState(null);
 
   useEffect(() => {
     // Join admin dashboard room
     socketService.joinAdminDashboard();
 
     // Listen for leaderboard updates
-    socketService.onTopPerformersUpdate(({ topPerformers }) => {
+    socketService.onTopPerformersUpdate(({ topPerformers, recentActivity }) => {
       setTopPerformers(topPerformers);
+      if (recentActivity) {
+        setRecentActivity(recentActivity);
+        setTimeout(() => setRecentActivity(null), 5000);
+      }
     });
 
     return () => {
@@ -229,8 +234,19 @@ const Dashboard = () => {
 
           <div className="card border-primary-500/10 bg-gradient-to-br from-slate-900/60 to-primary-500/5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold text-slate-50 uppercase tracking-wider">Top Performers</h2>
-              <span className="flex items-center gap-1">
+              <div>
+                <h2 className="text-sm font-bold text-slate-50 uppercase tracking-wider">Top Performers</h2>
+                {recentActivity && (
+                  <motion.p 
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-[10px] text-primary-400 font-medium mt-0.5"
+                  >
+                    {recentActivity.username} {recentActivity.reason} (+{recentActivity.points})
+                  </motion.p>
+                )}
+              </div>
+              <span className="flex items-center gap-1 self-start">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-[10px] text-emerald-400 font-medium">LIVE</span>
               </span>
@@ -243,34 +259,55 @@ const Dashboard = () => {
                 topPerformers.slice(0, 3).map((performer, idx) => (
                   <motion.div 
                     key={performer.userId}
+                    layout
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ 
+                      type: "spring",
+                      stiffness: 500,
+                      damping: 30,
+                      mass: 1
+                    }}
                     className="flex items-center justify-between p-2 rounded-lg bg-slate-800/40 border border-slate-700/50 hover:border-primary-500/30 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ring-2 ring-slate-900 ${
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm ring-2 ring-slate-900 overflow-hidden shadow-lg ${
+                          idx === 0 ? 'bg-amber-400 text-slate-900 ring-amber-400/20' : 
+                          idx === 1 ? 'bg-slate-300 text-slate-900 ring-slate-300/20' : 
+                          'bg-amber-700 text-slate-100 ring-amber-700/20'
+                        }`}>
+                          {performer.avatar ? (
+                            <img src={performer.avatar} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <span>{performer.username[0].toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className={`absolute -top-1 -left-1 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-md ${
                           idx === 0 ? 'bg-amber-400 text-slate-900' : 
                           idx === 1 ? 'bg-slate-300 text-slate-900' : 
                           'bg-amber-700 text-slate-100'
                         }`}>
-                          {performer.avatar ? (
-                            <img src={performer.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
-                          ) : (
-                            performer.username[0].toUpperCase()
-                          )}
+                          {idx + 1}
                         </div>
-                        <span className="absolute -top-1 -left-1 text-[10px] font-bold">#{idx + 1}</span>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-100">{performer.username}</p>
-                        <p className="text-[10px] text-slate-500">Daily Performer</p>
+                        <p className="text-xs font-bold text-slate-50">{performer.username}</p>
+                        <div className="flex items-center gap-1">
+                          <span className="h-1 w-1 rounded-full bg-primary-400" />
+                          <p className="text-[9px] text-slate-400 uppercase tracking-tighter">Daily Score</p>
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-bold text-primary-400">{Math.round(performer.score)}</p>
-                      <p className="text-[9px] text-slate-500 uppercase">Points</p>
+                      <div className="flex items-center justify-end gap-1">
+                        <span className="text-xs font-black text-primary-400">{Math.round(performer.score)}</span>
+                        <svg className="w-2.5 h-2.5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <p className="text-[8px] text-slate-500 font-bold uppercase">Points</p>
                     </div>
                   </motion.div>
                 ))

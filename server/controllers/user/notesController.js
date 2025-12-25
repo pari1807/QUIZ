@@ -73,7 +73,7 @@ export const getNoteDetails = async (req, res) => {
       await req.user.updateOne({ $addToSet: { readNotes: note._id } });
 
       // Update real-time leaderboard score (5 points per note)
-      await performanceService.updateScore(req.user._id, 5);
+      await performanceService.updateScore(req.user._id, 5, `Read Note: ${note.title}`);
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -100,7 +100,7 @@ export const downloadNote = async (req, res) => {
       await req.user.updateOne({ $addToSet: { readNotes: note._id } });
       
       // Update real-time leaderboard score (5 points per note)
-      await performanceService.updateScore(req.user._id, 5);
+      await performanceService.updateScore(req.user._id, 5, `Read Note: ${note.title}`);
     }
 
     // Award XP to uploader

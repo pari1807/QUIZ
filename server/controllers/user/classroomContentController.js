@@ -100,8 +100,8 @@ export const markVideoWatched = async (req, res) => {
       user.watchedVideos.push({ videoId });
       await user.save();
 
-      // Update real-time leaderboard score (10 points per video)
-      await performanceService.updateScore(req.user._id, 10);
+      // Update real-time leaderboard score (5 points per video)
+      await performanceService.updateScore(req.user._id, 5, 'Watched a Video');
     }
 
     res.json({ message: 'Video marked as watched', watchedVideos: user.watchedVideos });

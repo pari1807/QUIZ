@@ -12,7 +12,7 @@ export const performanceService = {
    * @param {string} userId - ID of the student
    * @param {number} points - Points to add
    */
-  updateScore: async (userId, points) => {
+  updateScore: async (userId, points, reason = '') => {
     try {
       const redis = getRedisClient();
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -24,8 +24,15 @@ export const performanceService = {
         // Set expiry to 48 hours to clean up old leaderboards
         await redis.expire(key, 172800);
 
+        // Fetch user info for broadcast if reason exists
+        let userInfo = null;
+        if (reason) {
+           const user = await User.findById(userId).select('username');
+           userInfo = { username: user?.username || 'Student', points, reason };
+        }
+
         // Notify admins of the update
-        await performanceService.broadcastTopPerformers();
+        await performanceService.broadcastTopPerformers(userInfo);
       }
     } catch (err) {
       console.error('Error updating performance score:', err.message);
@@ -75,11 +82,11 @@ export const performanceService = {
   /**
    * Broadcast top performers to all connected admins
    */
-  broadcastTopPerformers: async () => {
+  broadcastTopPerformers: async (recentActivity = null) => {
     try {
       const io = getIO();
       const topPerformers = await performanceService.getTopPerformers();
-      io.to('admin:dashboard').emit('top_performers_update', { topPerformers });
+      io.to('admin:dashboard').emit('top_performers_update', { topPerformers, recentActivity });
     } catch (err) {
       // Socket not ready yet or other error
       console.warn('Could not broadcast top performers:', err.message);
