@@ -33,6 +33,7 @@ import AttemptDetail from './pages/Admin/AttemptDetail';
 import AdminDiscussions from './pages/Admin/Discussions';
 import AdminAnnouncements from './pages/Admin/Announcements';
 import Classrooms from './pages/Admin/Classrooms';
+import Students from './pages/Admin/Students';
 
 // Layouts & Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -153,6 +154,7 @@ function App() {
           <Route path="quizzes" element={<QuizBuilder />} />
           <Route path="quizzes/:id/edit" element={<QuizEdit />} />
           <Route path="classrooms" element={<Classrooms />} />
+          <Route path="students" element={<Students />} />
 
           <Route path="analytics" element={<Analytics />} />
           <Route path="attempts/:attemptId" element={<AttemptDetail />} />

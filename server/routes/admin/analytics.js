@@ -8,6 +8,7 @@ import {
   getDashboardStats,
   getUserQuizPerformanceSummary,
   getUserQuizPerformanceDetail,
+  getAllStudents,
 } from '../../controllers/admin/analyticsController.js';
 import { protect, authorize } from '../../middleware/auth.js';
 
@@ -24,5 +25,6 @@ router.get('/flagged-content', getFlaggedContent);
 router.get('/dashboard', getDashboardStats);
 router.get('/user-performance', getUserQuizPerformanceSummary);
 router.get('/user-performance/:userId', getUserQuizPerformanceDetail);
+router.get('/all-students', getAllStudents);
 
 export default router;

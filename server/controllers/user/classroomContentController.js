@@ -1,4 +1,5 @@
 import Classroom from '../../models/Classroom.js';
+import User from '../../models/User.js';
 
 // @desc    Get all published topics from all classrooms (public access for all users)
 // @route   GET /api/classrooms/published/all

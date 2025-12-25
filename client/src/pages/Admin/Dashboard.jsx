@@ -108,13 +108,25 @@ const Dashboard = () => {
               hidden: { opacity: 0, y: 16 },
               visible: { opacity: 1, y: 0 },
             }}
-            className="card flex flex-col justify-between"
+            className="flex"
           >
-            <div>
-              <p className="text-xs text-slate-400 mb-1">{item.label}</p>
-              <p className="text-2xl font-semibold text-slate-50">{item.value}</p>
-            </div>
-            <p className="text-xs text-primary-300 mt-3">{item.sub}</p>
+            {item.label === 'Total Students' ? (
+              <Link to="/admin/students" className="card flex flex-col justify-between w-full hover:border-primary-500/50 transition-colors">
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">{item.label}</p>
+                  <p className="text-2xl font-semibold text-slate-50">{item.value}</p>
+                </div>
+                <p className="text-xs text-primary-300 mt-3">{item.sub}</p>
+              </Link>
+            ) : (
+              <div className="card flex flex-col justify-between w-full">
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">{item.label}</p>
+                  <p className="text-2xl font-semibold text-slate-50">{item.value}</p>
+                </div>
+                <p className="text-xs text-primary-300 mt-3">{item.sub}</p>
+              </div>
+            )}
           </motion.div>
         ))}
       </motion.div>

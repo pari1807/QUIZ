@@ -144,6 +144,7 @@ export const adminAPI = {
   getAllTickets: (params) => api.get('/admin/tickets', { params }),
   updateTicketStatus: (id, status) => api.put(`/admin/tickets/${id}/status`, { status }),
   replyToTicket: (id, message) => api.post(`/admin/tickets/${id}/reply`, { message }),
+  getAllStudents: (params) => api.get('/admin/analytics/all-students', { params }),
 };
 
 // User APIs

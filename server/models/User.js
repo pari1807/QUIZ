@@ -87,6 +87,15 @@ const userSchema = new mongoose.Schema(
         ref: 'Note',
       },
     ],
+    watchedVideos: [
+      {
+        videoId: String, // Store ID or URL
+        watchedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     savedNotes: [
       {
         type: mongoose.Schema.Types.ObjectId,

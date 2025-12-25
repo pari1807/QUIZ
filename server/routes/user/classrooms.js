@@ -1,6 +1,10 @@
 import express from 'express';
 import { protect } from '../../middleware/auth.js';
-import { getUserClassroomTopicsWithVideos, getAllPublishedTopics } from '../../controllers/user/classroomContentController.js';
+import { 
+  getUserClassroomTopicsWithVideos, 
+  getAllPublishedTopics,
+  markVideoWatched
+} from '../../controllers/user/classroomContentController.js';
 
 const router = express.Router();
 
@@ -11,5 +15,8 @@ router.get('/published/all', getAllPublishedTopics);
 
 // Get topics for a specific classroom (membership required)
 router.get('/:classroomId/topics', getUserClassroomTopicsWithVideos);
+
+// Mark video as watched
+router.post('/video/:videoId/watched', markVideoWatched);
 
 export default router;

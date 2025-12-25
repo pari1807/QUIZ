@@ -404,3 +404,32 @@ export const getDashboardStats = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Get all students
+// @route   GET /api/admin/analytics/all-students
+// @access  Private/Admin
+export const getAllStudents = async (req, res) => {
+  try {
+    const { search } = req.query;
+    const query = {
+      role: 'student',
+      $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
+    };
+
+    if (search) {
+      const s = String(search).toLowerCase();
+      query.$or = [
+        { username: { $regex: s, $options: 'i' } },
+        { email: { $regex: s, $options: 'i' } },
+      ];
+    }
+
+    const students = await User.find(query)
+      .select('username email avatar course semester xpPoints level createdAt isActive isBanned isMuted')
+      .sort({ createdAt: -1 });
+
+    res.json({ students });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
