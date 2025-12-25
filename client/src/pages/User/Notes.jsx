@@ -4,13 +4,20 @@ import toast from 'react-hot-toast';
 
 const Notes = () => {
   const [notes, setNotes] = useState([]);
+  const [savedNoteIds, setSavedNoteIds] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const { data } = await userAPI.browseNotes();
-        setNotes(data.notes || []);
+        const [notesRes, savedRes] = await Promise.all([
+          userAPI.browseNotes(),
+          userAPI.getSavedNotes()
+        ]);
+        
+        setNotes(notesRes.data.notes || []);
+        // getSavedNotes returns full note objects, map to IDs
+        setSavedNoteIds((savedRes.data || []).map(n => n._id));
       } catch (error) {
         console.error(error);
         toast.error(error.response?.data?.message || 'Failed to load notes');
@@ -30,6 +37,22 @@ const Notes = () => {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to download note');
+    }
+  };
+
+  const handleSave = async (id) => {
+    try {
+      if (savedNoteIds.includes(id)) {
+        await userAPI.unsaveNote(id);
+        setSavedNoteIds(prev => prev.filter(savedId => savedId !== id));
+        toast.success("Note removed from saved list");
+      } else {
+        await userAPI.saveNote(id);
+        setSavedNoteIds(prev => [...prev, id]);
+        toast.success("Note saved to dashboard");
+      }
+    } catch (error) {
+       toast.error(error.response?.data?.message || 'Failed to update note status');
     }
   };
 
@@ -71,12 +94,25 @@ const Notes = () => {
                 <span className="text-[11px] text-slate-500">
                   {note.classroom?.name || 'All classrooms'}
                 </span>
-                <button
-                  onClick={() => handleDownload(note._id)}
-                  className="btn-primary text-[11px] px-4 py-2"
-                >
-                  Download
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleSave(note._id)}
+                    disabled={savedNoteIds.includes(note._id)}
+                    className={`text-[11px] px-3 py-1.5 rounded-lg border transition-colors ${
+                      savedNoteIds.includes(note._id)
+                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400 cursor-default'
+                        : 'border-slate-700 hover:bg-slate-800 text-slate-300'
+                    }`}
+                  >
+                    {savedNoteIds.includes(note._id) ? 'Saved' : 'Bookmark'}
+                  </button>
+                  <button
+                    onClick={() => handleDownload(note._id)}
+                    className="btn-primary text-[11px] px-4 py-2"
+                  >
+                    Download
+                  </button>
+                </div>
               </div>
             </div>
           ))}

@@ -5,6 +5,7 @@ import {
   downloadNote,
   rateNote,
   saveNote,
+  unsaveNote,
   uploadNote,
   getTrendingNotes,
 } from '../../controllers/user/notesController.js';
@@ -23,5 +24,6 @@ router.get('/:id', getNoteDetails);
 router.get('/:id/download', downloadNote);
 router.post('/:id/rate', rateNote);
 router.post('/:id/save', saveNote);
+router.delete('/:id/save', unsaveNote);
 
 export default router;

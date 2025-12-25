@@ -3,10 +3,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { userAPI } from '../../services/api';
 
-const savedNotes = [
-  { title: 'DSA – Graphs Cheatsheet', subject: 'Data Structures', rating: 4.8 },
-  { title: 'Operating Systems – Deadlocks', subject: 'OS', rating: 4.5 },
-];
+
 
 const recentQuizzes = [
   { title: 'DBMS Weekly Quiz', score: '18 / 20', trend: '+8%', status: 'Improved' },
@@ -16,20 +13,31 @@ const recentQuizzes = [
 const Dashboard = () => {
   const [availableQuizzes, setAvailableQuizzes] = useState([]);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [savedNotes, setSavedNotes] = useState([]);
 
   useEffect(() => {
     let mounted = true;
 
     const load = async () => {
       try {
-        const res = await userAPI.getAvailableQuizzes();
+        const [quizzesRes, dashboardRes, savedNotesRes] = await Promise.all([
+          userAPI.getAvailableQuizzes(),
+          userAPI.getDashboardOverview(),
+          userAPI.getSavedNotes()
+        ]);
+        
         if (!mounted) return;
-        setAvailableQuizzes(res.data || []);
+        setAvailableQuizzes(quizzesRes.data || []);
+        setDashboardData(dashboardRes.data);
+        setSavedNotes(savedNotesRes.data || []);
+      } catch (error) {
+        console.error("Failed to load dashboard data", error);
       } finally {
         if (mounted) setLoadingQuizzes(false);
       }
     };
-
+    
     load();
     return () => {
       mounted = false;
@@ -67,7 +75,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* XP + streak row */}
+      {/* XP + streak row -> Now Learning Progress */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -77,19 +85,31 @@ const Dashboard = () => {
         <div className="card col-span-2 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400">XP Progress</p>
-              <p className="text-lg font-semibold text-slate-50">Level 7 – Active Learner</p>
+              <p className="text-xs text-slate-400">Learning Progress</p>
+              <div className="flex items-baseline gap-2">
+                 <p className="text-lg font-semibold text-slate-50">
+                  {dashboardData?.stats?.progressPercentage || 0}% Completed
+                 </p>
+                 <span className="text-xs text-slate-500">
+                   ({dashboardData?.stats?.userContent || 0} / {dashboardData?.stats?.totalContent || 0} items)
+                 </span>
+              </div>
             </div>
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300">
-              +220 XP this week
+              Level {dashboardData?.user?.level || 1}
             </span>
           </div>
           <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
-            <div className="h-full w-2/3 bg-gradient-to-r from-primary-500 to-secondary-500" />
+            <motion.div 
+              className="h-full bg-gradient-to-r from-primary-500 to-primary-400"
+              initial={{ width: 0 }}
+              animate={{ width: `${dashboardData?.stats?.progressPercentage || 0}%` }}
+              transition={{ duration: 1, ease: "easeOut" }}
+            />
           </div>
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Next badge: Top Scorer</span>
-            <span>230 XP to go</span>
+             <span>Keep learning to level up!</span>
+             <span>{dashboardData?.user?.xpPoints || 0} XP earned</span>
           </div>
         </div>
         <div className="card flex flex-col justify-between">
@@ -121,23 +141,50 @@ const Dashboard = () => {
             </Link>
           </div>
           <div className="space-y-2">
-            {savedNotes.map((note) => (
-              <div
-                key={note.title}
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs text-slate-200"
-              >
-                <div>
-                  <p className="font-medium text-slate-50">{note.title}</p>
-                  <p className="text-[11px] text-slate-400">{note.subject}</p>
+            {savedNotes.length === 0 ? (
+              <p className="text-xs text-slate-400 p-2 text-center">No saved notes yet.</p>
+            ) : (
+              savedNotes.map((note) => (
+                <div
+                  key={note._id}
+                  className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs text-slate-200"
+                >
+                  <div>
+                    <p className="font-medium text-slate-50">{note.title}</p>
+                    <p className="text-[11px] text-slate-400">{note.subject}</p>
+                  </div>
+                  <div className="text-right flex justify-end gap-2 mt-2">
+                     <button 
+                      onClick={async () => {
+                        try {
+                          await userAPI.unsaveNote(note._id);
+                          setSavedNotes(prev => prev.filter(n => n._id !== note._id));
+                          toast.success("Note removed");
+                        } catch (error) {
+                          toast.error("Failed to remove note");
+                        }
+                      }}
+                      className="inline-block px-3 py-1 rounded-lg border border-red-500/20 text-[11px] text-red-400 hover:bg-red-500/10 transition-colors"
+                    >
+                      Remove
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        try {
+                          const { data } = await userAPI.downloadNote(note._id);
+                          if (data.url) window.open(data.url, '_blank');
+                        } catch (error) {
+                          console.error("Failed to open note", error);
+                        }
+                      }}
+                      className="inline-block px-3 py-1 rounded-lg bg-primary-500/10 text-[11px] text-primary-200 hover:bg-primary-500/20 transition-colors"
+                    >
+                      Open
+                    </button>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-[11px] text-amber-300">★ {note.rating}</p>
-                  <button className="mt-1 px-2 py-0.5 rounded-lg bg-primary-500/10 text-[11px] text-primary-200">
-                    Open
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </motion.div>
 

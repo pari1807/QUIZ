@@ -146,6 +146,8 @@ export const userAPI = {
   getNoteDetails: (id) => api.get(`/notes/${id}`),
   downloadNote: (id) => api.get(`/notes/${id}/download`),
   rateNote: (id, rating) => api.post(`/notes/${id}/rate`, { rating }),
+  saveNote: (id) => api.post(`/notes/${id}/save`),
+  unsaveNote: (id) => api.delete(`/notes/${id}/save`),
   uploadNote: (formData) => api.post('/notes/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),

@@ -66,6 +66,11 @@ export const getNoteDetails = async (req, res) => {
     }
 
     res.json(note);
+
+    // Track read progress (if not already read)
+    if (req.user && !req.user.readNotes.includes(note._id)) {
+      await req.user.updateOne({ $addToSet: { readNotes: note._id } });
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -155,6 +160,32 @@ export const saveNote = async (req, res) => {
 
     res.json({ message: 'Note saved successfully' });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Unsave note (remove from favorites)
+// @route   DELETE /api/notes/:id/save
+// @access  Private
+export const unsaveNote = async (req, res) => {
+  try {
+    const { default: User } = await import('../../models/User.js');
+    const user = await User.findById(req.user._id);
+
+    // console.log('Unsaving note:', req.params.id);
+    // console.log('Current savedNotes:', user.savedNotes);
+
+    if (user.savedNotes) {
+      // Use filter for robust removal (converts ObjectId to string for comparison)
+      user.savedNotes = user.savedNotes.filter(
+        (id) => id.toString() !== req.params.id
+      );
+      await user.save();
+    }
+
+    res.json({ message: 'Note removed from saved list' });
+  } catch (error) {
+    console.error('Unsave error:', error);
     res.status(500).json({ message: error.message });
   }
 };

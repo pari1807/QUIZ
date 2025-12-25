@@ -1,0 +1,607 @@
+# MERN Stack Educational Platform
+
+## Project Report
+
+### Title
+MERN Stack Educational Platform with Advanced Admin Features and Real-Time Collaboration
+
+---
+
+## 1. Introduction
+
+The rapid growth of online learning has created a strong need for comprehensive, interactive, and scalable educational platforms. Traditional Learning Management Systems (LMS) often focus mainly on basic content delivery and assessment, lacking features such as real-time collaboration, gamification, deep analytics, and rich role-based control.
+
+This project proposes and implements a **full-stack MERN (MongoDB, Express, React, Node.js) educational platform** that addresses these gaps. The platform is designed to support different user roles (admin, teacher, student, moderator), real-time discussions, collaborative whiteboard sessions, gamification of learning activities, and powerful analytics for decision-making.
+
+The solution combines modern web technologies, real-time communication, cloud storage, and AI-assisted features to create an engaging and scalable learning environment suitable for colleges, coaching institutes, and online course platforms.
+
+---
+
+## 2. Problem Statement
+
+Existing educational platforms commonly suffer from the following limitations:
+
+- **Limited role-based access control** leading to security and management issues.
+- **Minimal real-time collaboration tools** such as live discussions and collaborative whiteboards.
+- **Weak analytics and reporting**, making it difficult for administrators and teachers to track performance and engagement.
+- **Poor content moderation**, allowing spam or inappropriate content in discussion forums.
+- **Insufficient gamification**, causing low motivation and reduced student engagement.
+- **Fragmented user experience** across notes, quizzes, assignments, and communication tools.
+
+There is a clear need for a unified, modern solution that brings together:
+
+- Structured content management (notes, quizzes, assignments).
+- Real-time communication and collaboration.
+- Advanced analytics and monitoring.
+- Gamified learning experiences.
+- Robust security, moderation, and role-based access.
+
+---
+
+## 3. Objectives of the Project
+
+The primary objectives of this project are:
+
+- **Objective 1:** Build a comprehensive MERN-based educational platform supporting admins, teachers, students, and moderators.
+- **Objective 2:** Implement role-based access control to ensure that each user only accesses relevant features and data.
+- **Objective 3:** Provide smart notes and quiz systems with filtering, analytics, and AI-assisted summaries.
+- **Objective 4:** Enable real-time discussions and collaborative whiteboard sessions using Socket.io.
+- **Objective 5:** Incorporate gamification features such as XP points, badges, and leaderboards to improve student engagement.
+- **Objective 6:** Provide advanced admin analytics for quiz performance, note downloads, user engagement, and flagged content.
+- **Objective 7:** Ensure secure and scalable architecture, including JWT-based authentication, rate limiting, and clean API structure.
+- **Objective 8:** Support modern DevOps and deployment practices using Docker, docker-compose, and optional CI/CD pipelines.
+
+---
+
+## 4. Scope of the Project
+
+The scope of the project includes:
+
+- Design and implementation of a **backend API server** using Node.js, Express, MongoDB, and Redis.
+- A **React-based frontend application** using Vite, TailwindCSS, and modern UI components.
+- Use of **Socket.io** for real-time discussions, presence tracking, and collaborative whiteboard.
+- Integration with **cloud storage** (e.g., AWS S3 or Cloudinary) for storing and serving notes and other file uploads.
+- Optional integration with **AI services** (e.g., OpenAI API) for automatic note summaries.
+- A modular architecture that can be extended with new features such as additional analytics modules or new content types.
+- Support for **Docker-based deployment**, with separate containers for frontend, backend, MongoDB, and Redis.
+
+Out of scope for the initial version are mobile-native applications and extremely large-scale multi-tenant deployments, but the design keeps future expansion in mind.
+
+---
+
+## 5. System Overview
+
+The proposed platform is a **multi-role educational ecosystem** with the following high-level features:
+
+### 5.1 Admin and Teacher Features
+
+- Create and manage classrooms.
+- Manage and approve notes with categories and metadata.
+- Build quizzes, manage question banks, and publish quizzes.
+- Access analytics dashboards for performance and engagement.
+- Moderate discussions and manage user accounts.
+- Create announcements and manage support tickets.
+
+### 5.2 Student Features
+
+- Browse and download approved notes.
+- Attempt quizzes and view detailed results.
+- Participate in classroom discussions and threads.
+- Submit assignments and view grades and feedback.
+- Join collaborative whiteboard sessions.
+- Track personal progress, badges, XP points, and leaderboards.
+
+### 5.3 Real-Time & Gamification Features
+
+- Live discussions with typing indicators and reactions.
+- Real-time whiteboard collaboration with multi-user cursors.
+- XP points for activities like quizzes, discussions, assignments, and more.
+- Leaderboards that encourage healthy competition.
+
+The system is structured into clearly defined **backend components (models, controllers, routes, services)** and **frontend components (pages, shared components, services, contexts)**.
+
+---
+
+## 6. Technology Stack
+
+### 6.1 Backend
+
+- **Node.js & Express**
+  - Handles HTTP requests and defines API endpoints.
+  - Middleware-based request processing for authentication, validation, and logging.
+
+- **MongoDB with Mongoose**
+  - Document-oriented database for users, classrooms, notes, quizzes, discussions, assignments, and analytics.
+  - Mongoose defines schemas, models, and validation rules.
+
+- **Socket.io**
+  - Real-time communication between server and clients.
+  - Used for live discussions, typing indicators, presence, and whiteboard synchronization.
+
+- **Redis (Cache)**
+  - Caching frequently accessed data to improve performance.
+  - Can be used for sessions, rate limiting counters, and leaderboards.
+
+- **Cloud Storage (AWS S3 or Cloudinary)**
+  - Stores uploaded notes and other static files.
+  - Backend uses a dedicated configuration module for secure integration.
+
+- **AI Integration (optional)**
+  - OpenAI API for generating note summaries.
+  - Requires secure storage and handling of API keys.
+
+### 6.2 Frontend
+
+- **React (with Vite)**
+  - Component-based UI development.
+  - Fast bundling and development environment.
+
+- **React Router**
+  - Manages page routing and navigation.
+  - Supports protected routes and role-based routing.
+
+- **State Management (Redux Toolkit or Zustand)**
+  - Centralized store for authentication, profile, and shared data.
+  - Simplifies data flow between components.
+
+- **TailwindCSS + Headless UI**
+  - Utility-first CSS framework for responsive UI.
+  - Accessible and composable UI primitives.
+
+- **Charts Library (Recharts/Chart.js)**
+  - Visualize analytics data for admins and users.
+
+- **Whiteboard Library (Fabric.js or Excalidraw)**
+  - Powers the collaborative whiteboard drawing interface.
+
+### 6.3 Tools and DevOps
+
+- **Jest + Supertest** for backend tests.
+- **Vitest + React Testing Library** for frontend tests.
+- **Docker & docker-compose** for containerized deployment.
+- **GitHub Actions (optional)** for CI/CD.
+
+---
+
+## 7. System Architecture
+
+The system follows a **client–server architecture**:
+
+- The **client (React)** communicates with the **server (Express)** via RESTful APIs and Socket.io.
+- The server interacts with:
+  - **MongoDB** for persistent storage.
+  - **Redis** for caching and performance.
+  - **Cloud storage services** for file handling.
+  - **External APIs** (AI, plagiarism) when configured.
+
+### 7.1 Backend Layers
+
+- **Configuration** (`database.js`, `cloudStorage.js`, `socket.js`).
+- **Models** representing database entities.
+- **Controllers** implementing business logic.
+- **Routes** defining REST endpoints.
+- **Middlewares & Services** for cross-cutting concerns.
+
+### 7.2 Frontend Structure
+
+- **Pages** for admin and user dashboards.
+- **Shared components** (Navbar, Sidebar, NotificationCenter, Leaderboard, FileUploader, RichTextEditor, Charts).
+- **Contexts** for authentication and global state.
+- **Services** for HTTP and Socket.io integrations.
+
+---
+
+## 8. Backend Design and Components
+
+### 8.1 Project Configuration and Setup
+
+- **`/server/package.json`**
+  - Dependencies: Express, Mongoose, Socket.io, JWT, Multer, AWS-SDK/Cloudinary, Redis client.
+  - Dev dependencies: Nodemon, Jest, Supertest.
+
+- **`.env.example`**
+  - Sample variables for database URI, JWT secrets, cloud credentials, and external API keys.
+
+- **`config/database.js`**
+  - Connects to MongoDB with proper error handling and logs.
+
+- **`config/cloudStorage.js`**
+  - Encapsulates configuration for AWS S3 or Cloudinary.
+  - Provides helper functions for uploading and deleting files.
+
+- **`config/socket.js`**
+  - Initializes and configures Socket.io.
+  - Performs authentication for WebSocket connections.
+
+### 8.2 Database Models
+
+- **User** (`User.js`)
+  - Fields: username, email, password (hashed), avatar, bio, course, semester.
+  - Role: admin, teacher, student, moderator.
+  - Gamification: xpPoints, badges, level.
+  - Timestamps and soft delete flags.
+
+- **Classroom** (`Classroom.js`)
+  - Fields: name, description, inviteCode, createdBy.
+  - Members with roles (student, moderator, TA).
+  - Settings: allowDiscussions, maxStudents.
+
+- **Note** (`Note.js`)
+  - Fields: title, description, file URL, uploadedBy.
+  - Categories: subject, topic, difficulty.
+  - Metadata: downloads, ratings, AI summary.
+  - Status: pending, approved, rejected.
+
+- **Quiz & Question** (`Quiz.js`, `Question.js`)
+  - Quiz: title, description, classroomId, createdBy, settings, questions, status.
+  - Question: type (MCQ/TrueFalse/ShortAnswer), text, options, correct answer, explanation, difficulty, tags.
+
+- **QuizAttempt** (`QuizAttempt.js`)
+  - Fields: quizId, studentId, answers, score, timeTaken.
+  - Supports auto grading and manual override.
+
+- **Discussion** (`Discussion.js`)
+  - Fields: classroomId, authorId, content, parentId.
+  - Reactions, mentions, attachments.
+  - Moderation: flagged, deleted, reason.
+
+- **Announcement** (`Announcement.js`)
+  - Title, content, targetClassrooms, publishAt, expiresAt, priority, read receipts.
+
+- **Assignment & Submission** (`Assignment.js`, `Submission.js`)
+  - Assignment: title, description, classroomId, dueDate, attachments, maxScore, submissionType.
+  - Submission: assignmentId, studentId, files, submittedAt, score, feedback, status.
+
+- **Ticket** (`Ticket.js`)
+  - studentId, subject, description, status, priority, assignedTo, messages.
+
+- **WhiteboardSession** (`WhiteboardSession.js`)
+  - classroomId, createdBy, snapshot, active users, last modified.
+
+- **Analytics** (`Analytics.js`)
+  - Aggregated data: quiz performance, note downloads, engagement.
+  - Time-series support for graphs.
+
+- **Notification** (`Notification.js`)
+  - userId, type, message, link, read status.
+
+### 8.3 Authentication and Authorization
+
+- **`middleware/auth.js`**
+  - Verifies JWT tokens on incoming requests.
+  - Extracts user info and enforces role-based access.
+  - Can include rate limiting.
+
+- **`controllers/authController.js` & `routes/auth.js`**
+  - Register, login, logout, refresh token, and forgot password.
+  - Routes:
+    - `POST /api/auth/register`
+    - `POST /api/auth/login`
+    - `POST /api/auth/logout`
+    - `POST /api/auth/refresh`
+    - `POST /api/auth/forgot-password`
+
+### 8.4 File Upload Service
+
+- **`middleware/upload.js`**
+  - Multer configuration.
+  - File type validation and size limits.
+
+- **`services/fileService.js`**
+  - Uploads files to S3/Cloudinary.
+  - Generates secure URLs.
+  - Deletes files when required.
+
+### 8.5 Admin APIs
+
+- **Notes Management** (`admin/notesController.js`, `routes/admin/notes.js`)
+  - CRUD for notes.
+  - Approve/reject notes.
+  - Generate AI summaries.
+  - Run plagiarism checks.
+  - Fetch note analytics.
+
+- **Quiz Builder** (`admin/quizController.js`, `routes/admin/quiz.js`)
+  - Create/update/delete quizzes.
+  - Manage question bank.
+  - Import/export CSV.
+  - Clone quiz templates.
+  - Manual grade override.
+
+- **Classroom Management** (`admin/classroomController.js`, `routes/admin/classroom.js`)
+  - Create/update/delete classrooms.
+  - Generate invite links.
+  - Manage members and roles.
+
+- **Analytics Dashboard** (`admin/analyticsController.js`, `routes/admin/analytics.js`)
+  - Quiz performance graphs.
+  - Notes download stats.
+  - Engagement metrics.
+  - Active users and flagged content.
+
+- **Moderation & Control** (`admin/moderationController.js`, `routes/admin/moderation.js`, `services/spamDetection.js`)
+  - Spam detection, auto-flagging.
+  - Mute/ban users.
+  - Delete messages.
+  - Resolve flags.
+
+- **Announcements & Support** (`admin/announcementController.js`, `routes/admin/announcements.js`, `admin/ticketController.js`, `routes/admin/tickets.js`)
+  - Manage announcements and scheduling.
+  - Manage support tickets, status, assignment, and replies.
+
+### 8.6 User APIs
+
+- **Smart Notes System** (`user/notesController.js`, `routes/user/notes.js`)
+  - Browse/filter notes.
+  - View details and download.
+  - Rate notes and save favorites.
+
+- **Quiz System** (`user/quizController.js`, `routes/user/quiz.js`)
+  - List available quizzes.
+  - Start attempts.
+  - Submit answers and get results.
+  - View leaderboards.
+
+- **Real-Time Discussions** (`user/discussionController.js`, `routes/user/discussions.js`, `sockets/discussionSocket.js`)
+  - Get discussion messages.
+  - Post new messages and replies.
+  - Add reactions and mentions.
+  - Report content.
+  - Real-time broadcasting, typing indicators, presence.
+
+- **Personal Dashboard & Assignments** (`user/dashboardController.js`, `routes/user/dashboard.js`, `user/assignmentController.js`, `routes/user/assignments.js`)
+  - Saved notes, quiz history, performance, events, notifications.
+  - List assignments, submit, and view submission status.
+
+- **Collaborative Whiteboard** (`whiteboardController.js`, `sockets/whiteboardSocket.js`, `routes/whiteboard.js`)
+  - Create and load whiteboard sessions.
+  - Real-time drawing sync and cursor tracking.
+
+- **Gamification & Profile** (`gamificationService.js`, `user/profileController.js`, `routes/user/profile.js`)
+  - Award XP, unlock badges, calculate levels.
+  - View and update profile.
+  - View achievements and manage notification preferences.
+
+---
+
+## 9. Frontend Design and Components
+
+### 9.1 Application Setup
+
+- **`client/package.json`**
+  - React, React Router, Axios, Socket.io-client, state management, TailwindCSS, chart and whiteboard libraries.
+
+- **`vite.config.js`**
+  - Vite configuration and API proxy setup.
+
+- **`tailwind.config.js`**
+  - Custom theme, colors, and typography.
+
+### 9.2 Core Structure
+
+- **`App.jsx`**
+  - Root component and routing shell.
+
+- **`routes/index.jsx`**
+  - Route definitions and protected route logic.
+
+- **`contexts/AuthContext.jsx`**
+  - Authentication state and token management.
+
+- **`services/api.js`**
+  - Axios instance and API helpers.
+
+- **`services/socket.js`**
+  - Socket.io client initialization and event helpers.
+
+### 9.3 Admin Pages
+
+- **Dashboard** – Analytics overview, quick actions, recent activity.
+- **NotesManagement** – Notes CRUD, categorization, approval workflow.
+- **QuizBuilder** – Quiz creation form, question bank, import/export UI.
+- **ClassroomManagement** – Classroom CRUD, invite link generation, member management.
+- **Analytics** – Performance charts, download statistics, engagement metrics.
+- **Moderation** – Flagged content review, user management actions, message moderation.
+- **Announcements** – Announcement creation, scheduling, broadcast controls.
+- **TicketSupport** – Ticket list, details, conversation thread, status management.
+
+### 9.4 User Pages
+
+- **User Dashboard** – Personal stats, saved notes, quiz history, upcoming events.
+- **Notes** – Browsing with filters, search, preview, download, rating.
+- **QuizList / QuizTaking / QuizResults** – Full quiz lifecycle UI.
+- **Discussions** – Chat room interface with threaded replies, mentions, emoji reactions.
+- **Whiteboard** – Canvas interface, toolbar, multi-user cursors, save/clear controls.
+- **Assignments** – Assignment list, upload interface, deadline tracking, submission history.
+- **Profile** – Profile editing, avatar upload, badges, XP progress bar, notification settings.
+
+### 9.5 Shared Components
+
+- **Navbar** – Role-based navigation, user menu, notifications bell.
+- **Sidebar** – Navigation menu, active classroom selector.
+- **NotificationCenter** – Real-time notifications, mark as read.
+- **Leaderboard** – Ranking display with weekly/all-time toggle.
+- **FileUploader** – Drag-and-drop, progress indicator, file validation.
+- **RichTextEditor** – For announcements and discussions with markdown support.
+- **Charts Components** – Reusable wrappers for line, bar, and pie charts.
+
+---
+
+## 10. Security Considerations
+
+- **JWT-Based Authentication**
+  - Secure stateless authentication using signed tokens.
+
+- **Role-Based Authorization**
+  - Admin-only, teacher-only, and student-only endpoints.
+
+- **Input Validation and Sanitization**
+  - Prevents SQL/NoSQL injection and XSS.
+
+- **Rate Limiting**
+  - Protects against brute-force and abuse.
+
+- **CORS Configuration**
+  - Restricts allowed origins, headers, and methods.
+  - Prevents unauthorized cross-origin access.
+
+---
+
+## 11. Testing and Verification Plan
+
+The platform uses a mix of automated and manual testing to ensure reliability and correctness.
+
+### 11.1 Automated Backend Tests (Jest + Supertest)
+
+- **Authentication Flow Tests**
+  - Register, login, logout, and refresh token scenarios.
+  - Invalid credentials and token expiration handling.
+
+- **CRUD Operations for Core Models**
+  - Users, classrooms, notes, quizzes, assignments, discussions, and tickets.
+
+- **Role-Based Access Control**
+  - Verifies that only authorized roles can access admin routes.
+  - Ensures students cannot perform restricted actions.
+
+- **File Upload Validation**
+  - Valid and invalid file types.
+  - File size limits.
+
+- **Quiz Grading Accuracy**
+  - Scoring logic for different question types.
+  - Edge cases like unanswered or partially answered questions.
+
+- **Gamification Logic**
+  - XP assignment and level calculation.
+  - Badge unlocking rules.
+
+### 11.2 Automated Frontend Tests (Vitest + React Testing Library)
+
+- **Component Rendering Tests**
+  - Ensures that pages and shared components render correctly.
+
+- **User Interaction Flows**
+  - Logging in and out.
+  - Attempting quizzes and submitting answers.
+  - Uploading notes and assignments.
+
+- **API Integration Tests**
+  - Mocks HTTP calls to verify proper handling of success and error responses.
+
+- **State Management and Routing**
+  - Confirms that protected routes behave correctly based on authentication state.
+
+### 11.3 Manual Verification
+
+- **Authentication System**
+  - Register users with different roles.
+  - Verify login, logout, and token refresh.
+
+- **Admin Features**
+  - Create classrooms and invite students.
+  - Upload, categorize, and approve notes.
+  - Build quizzes and check analytics.
+  - Moderate discussions and manage user accounts.
+  - Schedule and broadcast announcements.
+
+- **User Features**
+  - Browse and download notes.
+  - Take quizzes and view results.
+  - Participate in discussions and whiteboard sessions.
+  - Submit assignments and view feedback.
+
+- **Real-Time Features**
+  - Multiple users in the same discussion room.
+  - Whiteboard collaboration with multiple participants.
+  - Typing indicators and real-time notifications.
+
+- **Performance and Security Checks**
+  - Load testing with concurrent users.
+  - Verifying JWT validation, XSS protection, CORS, and rate limiting.
+
+---
+
+## 12. Deployment and CI/CD
+
+Deployment is containerized using Docker to ensure consistency across environments.
+
+### 12.1 Backend Dockerfile
+
+- Uses an official Node.js image.
+- Installs dependencies and builds the server.
+- Exposes the application port and defines the start command.
+
+### 12.2 Frontend Dockerfile
+
+- Builds the React application for production.
+- Serves static files via Nginx.
+
+### 12.3 `docker-compose.yml`
+
+- **MongoDB Service**
+  - Provides the primary database.
+
+- **Redis Service**
+  - Provides caching and auxiliary storage.
+
+- **Backend Service**
+  - Runs the Node.js/Express API.
+
+- **Frontend Service**
+  - Serves the React application.
+
+- **Network Configuration**
+  - Connects all services on an isolated Docker network.
+
+### 12.4 CI/CD with GitHub Actions (Optional)
+
+- **Continuous Integration**
+  - Runs backend and frontend tests on each push.
+
+- **Continuous Deployment**
+  - Can be extended to build Docker images and deploy to a cloud environment.
+
+---
+
+## 13. Conclusion
+
+This project delivers a **feature-rich, scalable educational platform** built on the MERN stack with real-time capabilities, advanced admin tools, and engaging user experiences. It unifies multiple educational workflows—notes, quizzes, assignments, discussions, whiteboard collaboration, gamification, and analytics—into a single coherent system.
+
+By leveraging modern frontend technologies, a robust backend architecture, and containerized deployment, the platform is both flexible and extensible. It can be adopted by educational institutions and online learning providers that require a secure, interactive, and data-driven learning environment.
+
+The modular design of models, controllers, services, and frontend components allows for easy future enhancements and customizations based on institutional needs.
+
+---
+
+## 14. Future Enhancements
+
+Potential future improvements include:
+
+- **Mobile Applications**
+  - Native Android and iOS apps for better accessibility.
+
+- **Advanced AI Features**
+  - Automatic question generation.
+  - Personalized quiz recommendations and adaptive learning paths.
+
+- **Stronger Plagiarism Detection**
+  - Integration with dedicated plagiarism detection APIs.
+  - Cross-document similarity checks across the platform.
+
+- **Video Conferencing Integration**
+  - Live classes integrated directly into classrooms.
+
+- **Multi-Tenant Support**
+  - Host multiple institutions on a single deployment with isolated data.
+
+- **Enhanced Analytics**
+  - Predictive analytics for identifying at-risk students.
+  - Deeper insight into learning patterns and content effectiveness.
+
+---
+
+## 15. Summary
+
+In summary, the MERN Stack Educational Platform demonstrates how modern web technologies, real-time communication, gamification, and analytics can be combined to create an advanced digital learning ecosystem. It addresses many limitations of traditional LMS platforms and sets a strong foundation for further innovation.
+

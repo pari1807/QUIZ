@@ -71,6 +71,19 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+    // Progress Tracking
+    readNotes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Note',
+      },
+    ],
+    savedNotes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Note',
+      },
+    ],
     // Account Status
     isActive: {
       type: Boolean,

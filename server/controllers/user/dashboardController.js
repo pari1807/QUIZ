@@ -217,6 +217,45 @@ export const getDashboardOverview = async (req, res) => {
       isRead: false,
     });
 
+    // --- Progress Calculation (Real Data) ---
+    
+    // 1. Total Content (Admin/Teacher Uploads)
+    // Count ONLY valid, published content
+    const totalQuizzesAvailable = await import('../../models/Quiz.js').then(m => 
+      m.default.countDocuments({ 
+        status: 'published', 
+        deletedAt: null 
+      })
+    );
+    
+    const totalNotesAvailable = await Note.countDocuments({ 
+      status: 'approved', 
+      deletedAt: null 
+    });
+
+    const totalContent = totalQuizzesAvailable + totalNotesAvailable;
+
+    // 2. User Consumption
+    // Unique quizzes attempted (at least submitted once)
+    const uniqueQuizzesAttempted = await QuizAttempt.distinct('quiz', {
+      student: req.user._id,
+      status: { $in: ['submitted', 'graded'] },
+    });
+    const completedQuizzesCount = uniqueQuizzesAttempted.length;
+
+    // Notes read by user
+    const readNotesCount = req.user.readNotes ? req.user.readNotes.length : 0;
+
+    const userContent = completedQuizzesCount + readNotesCount;
+
+    // 3. Percentage
+    let progressPercentage = 0;
+    if (totalContent > 0) {
+      progressPercentage = Math.round((userContent / totalContent) * 100);
+    }
+    // Cap at 100% just in case
+    if (progressPercentage > 100) progressPercentage = 100;
+
     res.json({
       user: {
         username: req.user.username,
@@ -227,9 +266,15 @@ export const getDashboardOverview = async (req, res) => {
         semester: req.user.semester,
       },
       stats: {
-        totalQuizzes,
+        totalQuizzes, // This was "graded" quizzes count from original code, kept for legacy if needed, but UI might use progressPercentage
         savedNotesCount,
         unreadNotifications,
+        // New progress stats
+        progressPercentage,
+        userContent,
+        totalContent,
+        completedQuizzesCount,
+        readNotesCount
       },
     });
   } catch (error) {
