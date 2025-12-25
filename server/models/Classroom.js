@@ -60,6 +60,10 @@ const classroomSchema = new mongoose.Schema(
           trim: true,
         },
         description: String,
+        published: {
+          type: Boolean,
+          default: false,
+        },
         videos: [
           {
             title: {

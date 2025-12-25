@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { adminAPI } from '../../services/api';
 
 const VIDEO_KINDS = [
@@ -39,7 +40,12 @@ const Classrooms = () => {
       try {
         setError('');
         const res = await adminAPI.getAllClassrooms();
-        setClassrooms(res.data || []);
+        const data = res.data || [];
+        setClassrooms(data);
+        // Auto-select first classroom
+        if (data.length > 0 && !selectedClassroomId) {
+          setSelectedClassroomId(data[0]._id);
+        }
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load classrooms');
       }
@@ -140,8 +146,6 @@ const Classrooms = () => {
     }
   };
 
-
-
   const handleDeleteTopic = async (topicId) => {
     if (!selectedClassroomId || !confirm('Are you sure you want to delete this topic?')) return;
     try {
@@ -184,316 +188,355 @@ const Classrooms = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="space-y-6"
+    >
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-slate-50">Classrooms</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-50">Course Manager</h1>
           <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-            Manage classroom topics (playlists) and attach videos. directly upload or link videos.
+            Organize your content into topics and playlists. Add videos via links or direct uploads.
           </p>
         </div>
       </div>
 
-      {error && (
-        <div className="text-[11px] text-rose-400 bg-rose-500/5 border border-rose-500/30 rounded-md px-3 py-2">
-          {error}
-        </div>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="text-xs text-rose-400 bg-rose-500/5 border border-rose-500/30 rounded-lg px-4 py-3"
+          >
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        {/* Classrooms list */}
-        <div className="space-y-3">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-semibold text-slate-50">Classrooms</h2>
-              {classrooms.length === 0 && (
-                <span className="text-[11px] text-slate-500">No classrooms yet.</span>
-              )}
-            </div>
-            <div className="space-y-1 max-h-[260px] overflow-y-auto pr-1">
-              {classrooms.map((c) => (
+      <div className="space-y-6">
+        {!selectedClassroom && (
+          <p className="text-sm text-slate-500">Select a classroom to manage its playlists.</p>
+        )}
+
+        {selectedClassroom && (
+          <motion.div layout className="space-y-6">
+            {/* Create New Topic Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-slate-800 rounded-xl p-5 backdrop-blur-sm"
+            >
+              <h2 className="text-sm font-semibold text-slate-50 mb-3">Create New Playlist</h2>
+              <form onSubmit={handleCreateTopic} className="space-y-3">
+                <input
+                  type="text"
+                  value={newTopicName}
+                  onChange={(e) => setNewTopicName(e.target.value)}
+                  placeholder="Playlist name (e.g. JavaScript Fundamentals)"
+                  className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/70 transition-all"
+                />
+                <textarea
+                  rows={2}
+                  value={newTopicDescription}
+                  onChange={(e) => setNewTopicDescription(e.target.value)}
+                  placeholder="Short description (optional)"
+                  className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/70 resize-none transition-all"
+                />
                 <button
-                  key={c._id}
-                  onClick={() => {
-                    setSelectedClassroomId(c._id);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
-                    selectedClassroomId === c._id
-                      ? 'bg-slate-900 border-primary-500/70 text-primary-100'
-                      : 'bg-slate-950/60 border-slate-800 hover:bg-slate-900/80'
-                  }`}
+                  type="submit"
+                  disabled={creatingTopic || !newTopicName.trim()}
+                  className="inline-flex items-center justify-center rounded-lg bg-primary-600 hover:bg-primary-500 disabled:opacity-60 disabled:cursor-not-allowed text-sm font-medium px-5 py-2.5 text-white transition-all shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40"
                 >
-                  <p className="font-medium">{c.name || 'Classroom'}</p>
-                  <p className="text-[11px] text-slate-400 truncate">
-                    {c.description || 'No description'}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Topics + create topic + videos inside each topic */}
-        <div className="space-y-3 xl:col-span-2">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-semibold text-slate-50">Topics (Playlists)</h2>
-              {loadingTopics && (
-                <span className="text-[11px] text-slate-400">Loading...</span>
-              )}
-            </div>
-
-            {!selectedClassroom && (
-              <p className="text-xs text-slate-500">Select a classroom to see its topics.</p>
-            )}
-
-            {selectedClassroom && (
-              <>
-                <form onSubmit={handleCreateTopic} className="space-y-2 mb-3">
-                  <input
-                    type="text"
-                    value={newTopicName}
-                    onChange={(e) => setNewTopicName(e.target.value)}
-                    placeholder="New topic name (e.g. DBMS, JavaScript)"
-                    className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/70"
-                  />
-                  <textarea
-                    rows={2}
-                    value={newTopicDescription}
-                    onChange={(e) => setNewTopicDescription(e.target.value)}
-                    placeholder="Short description (optional)"
-                    className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/70 resize-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={creatingTopic || !newTopicName.trim()}
-                    className="inline-flex items-center justify-center rounded-lg bg-primary-600 hover:bg-primary-500 disabled:opacity-60 disabled:cursor-not-allowed text-[11px] font-medium px-3 py-1.5 text-white"
-                  >
-                    {creatingTopic ? 'Creating...' : 'Add Topic (Playlist)'}
-                  </button>
-                </form>
-
-                <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
-                  {topics.length === 0 && !loadingTopics && (
-                    <p className="text-xs text-slate-500">No topics yet for this classroom.</p>
+                  {creatingTopic ? (
+                    <><svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Creating...</>
+                  ) : (
+                    '+ Add Playlist'
                   )}
-                  {topics.map((t) => {
-                    const id = t._id || t.id;
-                    const isExpanded = expandedTopicId === id;
-                    return (
-                      <div
-                        key={id}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-800 bg-slate-950/70 text-xs space-y-2"
-                      >
-                        <div className="flex items-start justify-between gap-2">
+                </button>
+              </form>
+            </motion.div>
+
+            {/* Topics/Playlists List */}
+            <div className="space-y-4">
+              {loadingTopics && (
+                <div className="text-center py-8">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+                  <p className="text-sm text-slate-400 mt-2">Loading playlists...</p>
+                </div>
+              )}
+
+              {topics.length === 0 && !loadingTopics && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-12 bg-slate-900/30 border border-dashed border-slate-700 rounded-xl"
+                >
+                  <svg className="mx-auto h-12 w-12 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  <p className="text-sm text-slate-400 mt-3">No playlists yet. Create one to get started!</p>
+                </motion.div>
+              )}
+
+              <AnimatePresence>
+                {topics.map((t, topicIdx) => {
+                  const id = t._id || t.id;
+                  const isExpanded = expandedTopicId === id;
+                  return (
+                    <motion.div
+                      key={id}
+                      layout
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3, delay: topicIdx * 0.05 }}
+                      className="bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-slate-800 rounded-xl overflow-hidden backdrop-blur-sm hover:border-slate-700 transition-all"
+                    >
+                      <div className="p-5">
+                        <div className="flex items-start justify-between gap-4 mb-4">
                           <div className="flex-1 min-w-0">
                             {editingTopicId === id ? (
-                              <>
+                              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
                                 <input
                                   type="text"
                                   value={editingTopicName}
                                   onChange={(e) => setEditingTopicName(e.target.value)}
-                                  className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-2 py-1 text-[11px] mb-1 focus:outline-none focus:ring-1 focus:ring-primary-500/60 focus:border-primary-500/70"
+                                  className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/70"
                                 />
                                 <textarea
                                   rows={2}
                                   value={editingTopicDescription}
                                   onChange={(e) => setEditingTopicDescription(e.target.value)}
-                                  className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-2 py-1 text-[11px] resize-none focus:outline-none focus:ring-1 focus:ring-primary-500/60 focus:border-primary-500/70"
+                                  className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/70"
                                 />
-                              </>
+                              </motion.div>
                             ) : (
                               <>
-                                <p className="font-medium text-slate-50 truncate">{t.name}</p>
+                                <h3 className="text-lg font-semibold text-slate-50 truncate">{t.name}</h3>
                                 {t.description && (
-                                  <p className="text-[11px] text-slate-400 truncate">{t.description}</p>
+                                  <p className="text-sm text-slate-400 mt-1 line-clamp-2">{t.description}</p>
                                 )}
                               </>
                             )}
                           </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="text-[10px] text-slate-500">
-                              {(t.videos || []).length} videos
+                          <div className="flex flex-col items-end gap-2">
+                            <span className="px-3 py-1 rounded-full text-xs bg-slate-800/80 border border-slate-700 text-slate-300">
+                              {(t.videos || []).length} {(t.videos || []).length === 1 ? 'video' : 'videos'}
                             </span>
-                            <div className="flex gap-1">
+                            <div className="flex gap-2">
                               {editingTopicId === id ? (
                                 <>
                                   <button
                                     type="button"
                                     onClick={cancelEditTopic}
-                                    className="px-2 py-0.5 rounded-lg border border-slate-700 text-[10px] text-slate-200 hover:bg-slate-800/80"
+                                    className="px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-200 hover:bg-slate-800/80 transition-all"
                                   >
                                     Cancel
                                   </button>
                                   <button
                                     type="button"
                                     disabled={!editingTopicName.trim()}
-                                    className="px-2 py-0.5 rounded-lg bg-primary-600 hover:bg-primary-500 text-[10px] text-white disabled:opacity-60"
+                                    className="px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-500 text-xs text-white disabled:opacity-60 transition-all"
                                   >
                                     Save
                                   </button>
                                 </>
                               ) : (
                                 <>
-                                 <button
+                                  <button
                                     type="button"
                                     onClick={() => handleDeleteTopic(id)}
-                                    className="px-2 py-0.5 rounded-lg border border-red-500/20 text-[10px] text-red-400 hover:bg-red-500/10"
+                                    className="px-3 py-1.5 rounded-lg border border-red-500/30 text-xs text-red-400 hover:bg-red-500/10 transition-all"
                                   >
                                     Delete
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => startEditTopic(t)}
-                                    className="px-2 py-0.5 rounded-lg border border-slate-700 text-[10px] text-slate-200 hover:bg-slate-800/80"
+                                    className="px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-200 hover:bg-slate-800/80 transition-all"
                                   >
                                     Edit
                                   </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedTopicId(isExpanded ? '' : id)}
+                                    className="px-3 py-1.5 rounded-lg bg-primary-600/20 border border-primary-500/50 text-xs text-primary-200 hover:bg-primary-500/30 transition-all"
+                                  >
+                                    {isExpanded ? '− Collapse' : '+ Manage Videos'}
+                                  </button>
                                 </>
                               )}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setExpandedTopicId(isExpanded ? '' : id)
-                                }
-                                className="px-2 py-0.5 rounded-lg border border-primary-500/70 text-[10px] text-primary-200 hover:bg-primary-500/10"
-                              >
-                                {isExpanded ? 'Hide videos' : 'Show / add videos'}
-                              </button>
                             </div>
                           </div>
                         </div>
 
-                        {isExpanded && (
-                          <>
-                            {/* Add video form for this topic */}
-                            <form
-                              onSubmit={(e) => handleAddVideo(e, id)}
-                              className="space-y-1 border-t border-slate-800 pt-2 mt-2"
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="space-y-4 border-t border-slate-800 pt-4 mt-4"
                             >
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[10px] text-slate-400 ml-1">Add to Playlist</label>
-                                <input
-                                  type="text"
-                                  value={videoTitle}
-                                  onChange={(e) => setVideoTitle(e.target.value)}
-                                  placeholder="Video title"
-                                  className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-2 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary-500/60 focus:border-primary-500/70"
-                                />
-                                <div className="flex gap-2">
-                                  <select
-                                    value={videoKind}
-                                    onChange={(e) => {
-                                      setVideoKind(e.target.value);
-                                      setVideoUrl('');
-                                      setVideoFile(null);
-                                    }}
-                                    className="rounded-lg bg-slate-950/70 border border-slate-800 px-2 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary-500/60 focus:border-primary-500/70"
-                                  >
-                                    {VIDEO_KINDS.map((k) => (
-                                      <option key={k.value} value={k.value}>
-                                        {k.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                   <button
-                                    type="submit"
-                                    disabled={
-                                      addingVideoForTopicId === id ||
-                                      !videoTitle.trim() ||
-                                      (videoKind === 'url' && !videoUrl.trim()) ||
-                                      (videoKind === 'upload' && !videoFile)
-                                    }
-                                    className="inline-flex items-center justify-center rounded-lg bg-primary-600 hover:bg-primary-500 disabled:opacity-60 disabled:cursor-not-allowed text-[11px] font-medium px-3 py-1 text-white ml-auto"
-                                  >
-                                    {addingVideoForTopicId === id ? 'Adding...' : 'Add Video'}
-                                  </button>
-                                </div>
-                                
-                                {videoKind === 'url' && (
+                              {/* Add Video Form */}
+                              <div className="bg-slate-950/50 rounded-lg p-4 border border-slate-800/50">
+                                <h4 className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wide">Add Video</h4>
+                                <form onSubmit={(e) => handleAddVideo(e, id)} className="space-y-3">
                                   <input
                                     type="text"
-                                    value={videoUrl}
-                                    onChange={(e) => setVideoUrl(e.target.value)}
-                                    placeholder="Paste YouTube / Drive / any video link here"
-                                    className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-2 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary-500/60 focus:border-primary-500/70"
+                                    value={videoTitle}
+                                    onChange={(e) => setVideoTitle(e.target.value)}
+                                    placeholder="Video title"
+                                    className="w-full rounded-lg bg-slate-900/70 border border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/70"
                                   />
-                                )}
+                                  
+                                  <div className="flex gap-2">
+                                    <select
+                                      value={videoKind}
+                                      onChange={(e) => {
+                                        setVideoKind(e.target.value);
+                                        setVideoUrl('');
+                                        setVideoFile(null);
+                                      }}
+                                      className="flex-1 rounded-lg bg-slate-900/70 border border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/70"
+                                    >
+                                      {VIDEO_KINDS.map((k) => (
+                                        <option key={k.value} value={k.value}>
+                                          {k.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <button
+                                      type="submit"
+                                      disabled={
+                                        addingVideoForTopicId === id ||
+                                        !videoTitle.trim() ||
+                                        (videoKind === 'url' && !videoUrl.trim()) ||
+                                        (videoKind === 'upload' && !videoFile)
+                                      }
+                                      className="px-5 py-2 rounded-lg bg-primary-600 hover:bg-primary-500 disabled:opacity-60 disabled:cursor-not-allowed text-sm font-medium text-white transition-all"
+                                    >
+                                      {addingVideoForTopicId === id ? 'Adding...' : '+ Add'}
+                                    </button>
+                                  </div>
 
-                                {videoKind === 'upload' && (
-                                  <label className="inline-flex items-center gap-2 text-[11px] text-slate-300 cursor-pointer border border-dashed border-slate-700 rounded-lg p-2 bg-slate-900/40 hover:bg-slate-900/60 transition-colors">
-                                    <span className={!videoFile ? "text-slate-400" : "text-emerald-400"}>
-                                      {videoFile ? `Selected: ${videoFile.name}` : 'Click to upload video file'}
-                                    </span>
+                                  {videoKind === 'url' && (
                                     <input
-                                      type="file"
-                                      accept="video/*"
-                                      onChange={handleVideoFileChange}
-                                      className="hidden"
+                                      type="text"
+                                      value={videoUrl}
+                                      onChange={(e) => setVideoUrl(e.target.value)}
+                                      placeholder="Paste YouTube / Drive / any video link here"
+                                      className="w-full rounded-lg bg-slate-900/70 border border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/70"
                                     />
-                                  </label>
+                                  )}
+
+                                  {videoKind === 'upload' && (
+                                    <label className="flex items-center justify-center gap-2 text-sm text-slate-300 cursor-pointer border-2 border-dashed border-slate-700 rounded-lg p-6 bg-slate-900/40 hover:bg-slate-900/70 hover:border-primary-500/50 transition-all">
+                                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                      </svg>
+                                      <span className={!videoFile ? "text-slate-400" : "text-emerald-400"}>
+                                        {videoFile ? `Selected: ${videoFile.name}` : 'Click to upload video file'}
+                                      </span>
+                                      <input
+                                        type="file"
+                                        accept="video/*"
+                                        onChange={handleVideoFileChange}
+                                        className="hidden"
+                                      />
+                                    </label>
+                                  )}
+                                </form>
+                              </div>
+
+                              {/* Videos Grid */}
+                              <div>
+                                <h4 className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wide">Videos</h4>
+                                {(t.videos || []).length === 0 ? (
+                                  <div className="text-center py-8 bg-slate-950/30 border border-dashed border-slate-700 rounded-lg">
+                                    <svg className="mx-auto h-10 w-10 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                    <p className="text-xs text-slate-500 mt-2">No videos yet</p>
+                                  </div>
+                                ) : (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                                    <AnimatePresence>
+                                      {(t.videos || []).map((v, idx) => (
+                                        <motion.div
+                                          key={v._id || v.id || idx}
+                                          layout
+                                          initial={{ opacity: 0, scale: 0.9 }}
+                                          animate={{ opacity: 1, scale: 1 }}
+                                          exit={{ opacity: 0, scale: 0.9 }}
+                                          transition={{ duration: 0.2 }}
+                                          className="group relative bg-slate-950/80 border border-slate-800 rounded-lg overflow-hidden hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/10 transition-all"
+                                        >
+                                          {/* Video Thumbnail/Placeholder */}
+                                          <div className="aspect-video bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center relative overflow-hidden">
+                                            <svg className="w-12 h-12 text-slate-600 group-hover:text-primary-500 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                                            </svg>
+                                            <div className="absolute top-2 right-2">
+                                              <span className="px-2 py-1 rounded-md text-[10px] bg-slate-950/80 border border-slate-700 text-slate-300">
+                                                {v.kind === 'upload' ? 'Uploaded' : 'Link'}
+                                              </span>
+                                            </div>
+                                            <div className="absolute top-2 left-2">
+                                              <span className="px-2 py-1 rounded-md text-[10px] bg-slate-950/80 border border-slate-700 text-slate-300 font-medium">
+                                                #{idx + 1}
+                                              </span>
+                                            </div>
+                                          </div>
+
+                                          {/* Video Info */}
+                                          <div className="p-3">
+                                            <h5 className="text-sm font-medium text-slate-100 truncate mb-2">{v.title}</h5>
+                                            <div className="flex items-center justify-between gap-2">
+                                              <a
+                                                href={v.url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="flex-1 text-center text-xs px-3 py-1.5 rounded-lg bg-primary-600/20 border border-primary-500/50 text-primary-200 hover:bg-primary-500/30 transition-all"
+                                              >
+                                                Watch
+                                              </a>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleRemoveVideo(id, v._id || v.id)}
+                                                className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all"
+                                                title="Remove video"
+                                              >
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                                                  <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
+                                                </svg>
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </motion.div>
+                                      ))}
+                                    </AnimatePresence>
+                                  </div>
                                 )}
                               </div>
-                            </form>
-
-                            {/* Videos list */}
-                            <div className="mt-2 space-y-1 max-h-48 overflow-y-auto pr-1">
-                              {(t.videos || []).length === 0 && (
-                                <p className="text-[11px] text-slate-500">
-                                  No videos added (Playlist empty).
-                                </p>
-                              )}
-                              {(t.videos || []).map((v, idx) => (
-                                <div
-                                  key={v._id || v.id || idx}
-                                  className="border border-slate-800 rounded-lg bg-slate-950/80 px-2 py-1 text-[11px] flex flex-col gap-1 hover:border-slate-700 transition-colors"
-                                >
-                                  <div className="flex items-center justify-between gap-2">
-                                    <div className="flex-1 min-w-0">
-                                      <p className="font-medium text-slate-50 truncate">{idx + 1}. {v.title}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="px-2 py-0.5 rounded-full text-[9px] bg-slate-900 border border-slate-700 text-slate-300">
-                                          {v.kind === 'upload' ? 'Upload' : 'Link'}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveVideo(id, v._id || v.id)}
-                                            className="text-red-400 hover:text-red-300 p-0.5"
-                                            title="Remove video"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
-                                              <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[9px] text-slate-500 truncate">{v.url}</span>
-                                    <a
-                                      href={v.url}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="text-[10px] px-2 py-0.5 rounded-lg border border-primary-500/70 text-primary-200 hover:bg-primary-500/10 whitespace-nowrap"
-                                    >
-                                      Watch
-                                    </a>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
