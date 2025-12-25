@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userAPI } from '../../services/api';
 
@@ -25,12 +25,330 @@ const getRelativeTime = (date) => {
   return `${years}y ago`;
 };
 
+// Format time for video player
+const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+// Custom Video Player Component
+const VideoPlayer = ({ video, onClose }) => {
+  const videoRef = useRef(null);
+  const containerRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [showControls, setShowControls] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const controlsTimeoutRef = useRef(null);
+
+  // Play/Pause toggle
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  // Skip forward 10 seconds
+  const skipForward = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.min(videoRef.current.currentTime + 10, duration);
+    }
+  };
+
+  // Skip backward 10 seconds
+  const skipBackward = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.max(videoRef.current.currentTime - 10, 0);
+    }
+  };
+
+  // Toggle fullscreen
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+    
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen?.() ||
+      containerRef.current.webkitRequestFullscreen?.() ||
+      containerRef.current.mozRequestFullScreen?.();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.() ||
+      document.webkitExitFullscreen?.() ||
+      document.mozCancelFullScreen?.();
+      setIsFullscreen(false);
+    }
+  };
+
+  // Handle progress bar click
+  const handleProgressClick = (e) => {
+    if (videoRef.current) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const percent = (e.clientX - rect.left) / rect.width;
+      videoRef.current.currentTime = percent * duration;
+    }
+  };
+
+  // Auto-hide controls
+  const handleMouseMove = () => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    controlsTimeoutRef.current = setTimeout(() => {
+      if (isPlaying) setShowControls(false);
+    }, 3000);
+  };
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      switch (e.key) {
+        case ' ':
+        case 'k':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          skipForward();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          skipBackward();
+          break;
+        case 'f':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case 'Escape':
+          if (!isFullscreen) onClose();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying, isFullscreen, duration]);
+
+  // Update fullscreen state on change
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center"
+      onClick={onClose}
+    >
+      <div
+        ref={containerRef}
+        className="relative w-full max-w-6xl mx-4"
+        onClick={(e) => e.stopPropagation()}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => isPlaying && setShowControls(false)}
+      >
+        {/* Close Button */}
+        <motion.button
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: showControls ? 1 : 0, y: 0 }}
+          onClick={onClose}
+          className="absolute -top-12 right-0 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </motion.button>
+
+        {/* Video Title */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: showControls ? 1 : 0, y: 0 }}
+          className="absolute -top-12 left-0 text-white font-medium text-lg"
+        >
+          {video.title}
+        </motion.div>
+
+        {/* Video Container */}
+        <div className="relative bg-black rounded-xl overflow-hidden shadow-2xl">
+          <video
+            ref={videoRef}
+            src={video.url}
+            className="w-full aspect-video"
+            onClick={togglePlay}
+            onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)}
+            onLoadedMetadata={(e) => setDuration(e.target.duration)}
+            onEnded={() => setIsPlaying(false)}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+          />
+
+          {/* Center Play/Pause Button (shown when paused) */}
+          <AnimatePresence>
+            {!isPlaying && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <button
+                  onClick={togglePlay}
+                  className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center hover:bg-white/30 transition-all"
+                >
+                  <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                  </svg>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Controls Overlay */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: showControls ? 1 : 0 }}
+            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4"
+          >
+            {/* Progress Bar */}
+            <div
+              className="w-full h-2 bg-white/20 rounded-full cursor-pointer mb-4 group"
+              onClick={handleProgressClick}
+            >
+              <div
+                className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full relative"
+                style={{ width: `${(currentTime / duration) * 100}%` }}
+              >
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg" />
+              </div>
+            </div>
+
+            {/* Control Buttons */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {/* Play/Pause */}
+                <button
+                  onClick={togglePlay}
+                  className="p-2 rounded-lg hover:bg-white/10 text-white transition-all"
+                >
+                  {isPlaying ? (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Skip Backward 10s */}
+                <button
+                  onClick={skipBackward}
+                  className="p-2 rounded-lg hover:bg-white/10 text-white transition-all flex items-center gap-1"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
+                  </svg>
+                  <span className="text-xs font-medium">10</span>
+                </button>
+
+                {/* Skip Forward 10s */}
+                <button
+                  onClick={skipForward}
+                  className="p-2 rounded-lg hover:bg-white/10 text-white transition-all flex items-center gap-1"
+                >
+                  <span className="text-xs font-medium">10</span>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z" />
+                  </svg>
+                </button>
+
+                {/* Time Display */}
+                <span className="text-white text-sm font-mono">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-4">
+                {/* Volume */}
+                <div className="flex items-center gap-2 group">
+                  <button className="p-2 rounded-lg hover:bg-white/10 text-white transition-all">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={volume}
+                    onChange={(e) => {
+                      const vol = parseFloat(e.target.value);
+                      setVolume(vol);
+                      if (videoRef.current) videoRef.current.volume = vol;
+                    }}
+                    className="w-0 group-hover:w-20 transition-all accent-cyan-400"
+                  />
+                </div>
+
+                {/* Fullscreen */}
+                <button
+                  onClick={toggleFullscreen}
+                  className="p-2 rounded-lg hover:bg-white/10 text-white transition-all"
+                >
+                  {isFullscreen ? (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Keyboard Shortcuts Hint */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: showControls ? 0.5 : 0 }}
+          className="absolute -bottom-8 left-0 text-white/50 text-xs"
+        >
+          Space: Play/Pause • ←→: Skip 10s • F: Fullscreen • Esc: Close
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+};
+
 const Classrooms = () => {
   const [allTopics, setAllTopics] = useState([]);
   const [selectedTopicId, setSelectedTopicId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [playingVideo, setPlayingVideo] = useState(null);
 
   const selectedTopic = useMemo(
     () => allTopics.find((t) => (t._id || t.id) === selectedTopicId),
@@ -58,7 +376,6 @@ const Classrooms = () => {
 
   useEffect(() => {
     loadAllPublishedTopics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredTopics = useMemo(() => {
@@ -74,376 +391,185 @@ const Classrooms = () => {
     );
   }, [allTopics, search]);
 
+  // Check if video is playable in browser (uploaded videos vs external links)
+  const isPlayableVideo = (video) => {
+    if (video.kind === 'upload') return true;
+    const url = video.url?.toLowerCase() || '';
+    return url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.ogg') || url.includes('imagekit.io');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Video Player Modal */}
+      <AnimatePresence>
+        {playingVideo && (
+          <VideoPlayer video={playingVideo} onClose={() => setPlayingVideo(null)} />
+        )}
+      </AnimatePresence>
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8"
       >
-        {/* Header Section with Gradient */}
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
           className="text-center space-y-4"
         >
-          <div className="inline-block">
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="relative"
-            >
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
-                Learning Videos
-              </h1>
-              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400/20 via-blue-500/20 to-purple-600/20 blur-2xl -z-10"></div>
-            </motion.div>
-          </div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-slate-400 text-lg max-w-2xl mx-auto"
-          >
-            Explore curated playlists and master new skills with our video collection
-          </motion.p>
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+            Learning Videos
+          </h1>
+          <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+            Watch curated video playlists directly on this platform
+          </p>
 
-          {/* Search Bar */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="max-w-2xl mx-auto"
-          >
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all"></div>
-              <div className="relative flex items-center gap-3 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl px-6 py-4 hover:border-slate-600/50 transition-all">
-                <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search for playlists, topics, or videos..."
-                  className="flex-1 bg-transparent text-slate-100 placeholder-slate-500 focus:outline-none text-base"
-                />
-                {search && (
-                  <button
-                    onClick={() => setSearch('')}
-                    className="text-slate-400 hover:text-slate-300 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
-              </div>
+          {/* Search */}
+          <div className="max-w-2xl mx-auto">
+            <div className="relative flex items-center gap-3 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl px-6 py-4">
+              <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search playlists or videos..."
+                className="flex-1 bg-transparent text-slate-100 placeholder-slate-500 focus:outline-none"
+              />
             </div>
-          </motion.div>
+          </div>
         </motion.div>
 
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="max-w-2xl mx-auto bg-rose-500/10 border border-rose-500/30 rounded-2xl px-6 py-4 backdrop-blur-xl"
-            >
-              <div className="flex items-center gap-3">
-                <svg className="w-5 h-5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-rose-300">{error}</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {error && (
+          <div className="max-w-2xl mx-auto bg-rose-500/10 border border-rose-500/30 rounded-2xl px-6 py-4 text-rose-300">
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Playlists Sidebar */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="lg:col-span-4 xl:col-span-3"
-          >
-            <div className="sticky top-6 space-y-4">
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all"></div>
-                <div className="relative bg-slate-900/60 backdrop-blur-2xl border border-slate-700/50 rounded-2xl p-6 hover:border-slate-600/50 transition-all">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 animate-pulse"></span>
-                      Playlists
-                    </h2>
-                    {loading && (
-                      <div className="w-5 h-5 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin"></div>
-                    )}
-                  </div>
+          <div className="lg:col-span-4 xl:col-span-3">
+            <div className="sticky top-6 bg-slate-900/60 backdrop-blur-2xl border border-slate-700/50 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-slate-100">Playlists</h2>
+                {loading && <div className="w-5 h-5 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />}
+              </div>
 
-                  <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                    {filteredTopics.length === 0 && !loading && (
-                      <div className="text-center py-12">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center">
-                          <svg className="w-8 h-8 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                          </svg>
-                        </div>
-                        <p className="text-sm text-slate-500">
-                          {search ? 'No matching playlists' : 'No playlists yet'}
-                        </p>
-                      </div>
-                    )}
-
-                    <AnimatePresence>
-                      {filteredTopics.map((t, idx) => (
-                        <motion.button
-                          key={t._id || t.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          transition={{ delay: idx * 0.05 }}
-                          onClick={() => setSelectedTopicId(t._id || t.id)}
-                          className={`w-full group relative overflow-hidden rounded-xl p-4 text-left transition-all duration-300 ${
-                            selectedTopicId === (t._id || t.id)
-                              ? 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-2 border-cyan-500/50 shadow-lg shadow-cyan-500/20'
-                              : 'bg-slate-800/40 border-2 border-slate-700/50 hover:border-slate-600/50 hover:bg-slate-800/60'
-                          }`}
-                        >
-                          <div className={`absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity ${
-                            selectedTopicId === (t._id || t.id) ? 'opacity-100' : ''
-                          }`}></div>
-                          
-                          <div className="relative">
-                            <div className="flex items-start justify-between gap-3 mb-2">
-                              <h3 className="font-medium text-slate-100 flex-1 line-clamp-2">{t.name}</h3>
-                              {selectedTopicId === (t._id || t.id) && (
-                                <motion.div
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center flex-shrink-0"
-                                >
-                                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </motion.div>
-                              )}
-                            </div>
-                            {t.description && (
-                              <p className="text-xs text-slate-400 line-clamp-2 mb-2">{t.description}</p>
-                            )}
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                                </svg>
-                                <span>{(t.videos || []).length} videos</span>
-                              </div>
-                            </div>
-                          </div>
-                        </motion.button>
-                      ))}
-                    </AnimatePresence>
+              <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                {filteredTopics.length === 0 && !loading && (
+                  <div className="text-center py-8 text-slate-500">
+                    {search ? 'No matching playlists' : 'No playlists yet'}
                   </div>
-                </div>
+                )}
+
+                {filteredTopics.map((t) => (
+                  <button
+                    key={t._id || t.id}
+                    onClick={() => setSelectedTopicId(t._id || t.id)}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                      selectedTopicId === (t._id || t.id)
+                        ? 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-cyan-500/50'
+                        : 'bg-slate-800/40 border-slate-700/50 hover:border-slate-600/50'
+                    }`}
+                  >
+                    <h3 className="font-medium text-slate-100">{t.name}</h3>
+                    {t.description && <p className="text-xs text-slate-400 truncate mt-1">{t.description}</p>}
+                    <p className="text-xs text-slate-500 mt-2">{(t.videos || []).length} videos</p>
+                  </button>
+                ))}
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Videos Grid */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="lg:col-span-8 xl:col-span-9"
-          >
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all"></div>
-              <div className="relative bg-slate-900/60 backdrop-blur-2xl border border-slate-700/50 rounded-2xl p-6 md:p-8 min-h-[600px] hover:border-slate-600/50 transition-all">
-                {selectedTopic && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-8"
-                  >
-                    <h2 className="text-2xl md:text-3xl font-bold text-slate-100 mb-2">{selectedTopic.name}</h2>
-                    {selectedTopic.description && (
-                      <p className="text-slate-400">{selectedTopic.description}</p>
-                    )}
-                    <div className="mt-4 flex items-center gap-3 text-sm text-slate-500">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+          <div className="lg:col-span-8 xl:col-span-9">
+            <div className="bg-slate-900/60 backdrop-blur-2xl border border-slate-700/50 rounded-2xl p-6 md:p-8 min-h-[600px]">
+              {selectedTopic && (
+                <div className="mb-8">
+                  <h2 className="text-2xl md:text-3xl font-bold text-slate-100">{selectedTopic.name}</h2>
+                  {selectedTopic.description && <p className="text-slate-400 mt-2">{selectedTopic.description}</p>}
+                </div>
+              )}
+
+              {!selectedTopic && filteredTopics.length > 0 && (
+                <div className="flex items-center justify-center h-full text-slate-500">Choose a playlist from the left</div>
+              )}
+
+              {filteredTopics.length === 0 && !loading && (
+                <div className="flex items-center justify-center h-full text-slate-500">No published content</div>
+              )}
+
+              {selectedTopic && (selectedTopic.videos || []).length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {(selectedTopic.videos || []).map((v, idx) => (
+                    <motion.div
+                      key={v._id || v.id || idx}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="group bg-slate-800/60 border border-slate-700/50 rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all"
+                    >
+                      {/* Thumbnail */}
+                      <div className="aspect-video bg-gradient-to-br from-slate-800 to-slate-900 relative flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-cyan-500/30 transition-all">
+                          <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
                           </svg>
                         </div>
-                        <span>{(selectedTopic.videos || []).length} videos in this playlist</span>
+                        <span className="absolute top-3 right-3 px-2 py-1 rounded text-xs bg-slate-900/80 text-slate-300">
+                          {v.kind === 'upload' ? 'Video' : 'Link'}
+                        </span>
+                        {v.createdAt && (
+                          <span className="absolute bottom-3 left-3 px-2 py-1 rounded text-xs bg-slate-900/80 text-slate-400">
+                            {getRelativeTime(v.createdAt)}
+                          </span>
+                        )}
                       </div>
-                    </div>
-                  </motion.div>
-                )}
 
-                {!selectedTopic && filteredTopics.length > 0 && (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center space-y-4">
-                      <div className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 flex items-center justify-center">
-                        <svg className="w-12 h-12 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-                        </svg>
+                      {/* Info */}
+                      <div className="p-4">
+                        <h3 className="font-medium text-slate-100 line-clamp-2 mb-2">{v.title}</h3>
+                        {v.description && <p className="text-xs text-slate-400 line-clamp-2 mb-3">{v.description}</p>}
+                        
+                        {isPlayableVideo(v) ? (
+                          <button
+                            onClick={() => setPlayingVideo(v)}
+                            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium hover:from-cyan-400 hover:to-blue-500 transition-all flex items-center justify-center gap-2"
+                          >
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                            </svg>
+                            Watch Now
+                          </button>
+                        ) : (
+                          <a
+                            href={v.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-full py-2.5 rounded-xl bg-slate-700 text-white font-medium hover:bg-slate-600 transition-all flex items-center justify-center gap-2"
+                          >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            Open Link
+                          </a>
+                        )}
                       </div>
-                      <div>
-                        <p className="text-lg text-slate-300 font-medium">Choose a playlist</p>
-                        <p className="text-sm text-slate-500 mt-1">Select from the sidebar to start watching</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                    </motion.div>
+                  ))}
+                </div>
+              )}
 
-                {filteredTopics.length === 0 && !loading && (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center space-y-4">
-                      <div className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center">
-                        <svg className="w-12 h-12 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-lg text-slate-300 font-medium">No content found</p>
-                        <p className="text-sm text-slate-500 mt-1">Try adjusting your search</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedTopic && (selectedTopic.videos || []).length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    <AnimatePresence>
-                      {(selectedTopic.videos || []).map((v, idx) => (
-                        <motion.div
-                          key={v._id || v.id || v.title + v.url}
-                          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.9, y: -20 }}
-                          transition={{ duration: 0.3, delay: idx * 0.08 }}
-                          className="group relative"
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                          
-                          <div className="relative bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/10">
-                            {/* Thumbnail with gradient overlay */}
-                            <div className="aspect-video bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 relative overflow-hidden group">
-                              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                              
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <motion.div
-                                  whileHover={{ scale: 1.1 }}
-                                  className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 cursor-pointer"
-                                >
-                                  <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                                  </svg>
-                                </motion.div>
-                              </div>
-
-                              {/* Badges */}
-                              <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
-                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 text-slate-300">
-                                  {v.kind === 'upload' ? '📹 Uploaded' : '🔗 Link'}
-                                </span>
-                              </div>
-
-                              {v.createdAt && (
-                                <div className="absolute bottom-3 left-3">
-                                  <span className="px-3 py-1 rounded-full text-xs bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 text-slate-400">
-                                    {getRelativeTime(v.createdAt)}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Content */}
-                            <div className="p-5 space-y-3">
-                              <h3 className="font-semibold text-slate-100 line-clamp-2 leading-snug">
-                                {v.title}
-                              </h3>
-                              {v.description && (
-                                <p className="text-sm text-slate-400 line-clamp-2">
-                                  {v.description}
-                                </p>
-                              )}
-
-                              <a
-                                href={v.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="block w-full"
-                              >
-                                <motion.div
-                                  whileHover={{ scale: 1.02 }}
-                                  whileTap={{ scale: 0.98 }}
-                                  className="relative group/btn overflow-hidden rounded-xl"
-                                >
-                                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 opacity-100 group-hover/btn:opacity-100 transition-opacity"></div>
-                                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
-                                  <div className="relative px-4 py-3 flex items-center justify-center gap-2 text-white font-medium">
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span>Watch Now</span>
-                                  </div>
-                                </motion.div>
-                              </a>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                )}
-
-                {selectedTopic && (selectedTopic.videos || []).length === 0 && !loading && (
-                  <div className="flex items-center justify-center h-96">
-                    <div className="text-center space-y-4">
-                      <div className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center">
-                        <svg className="w-12 h-12 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-lg text-slate-300 font-medium">No videos yet</p>
-                        <p className="text-sm text-slate-500 mt-1">This playlist is empty</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {selectedTopic && (selectedTopic.videos || []).length === 0 && (
+                <div className="flex items-center justify-center h-96 text-slate-500">No videos in this playlist</div>
+              )}
             </div>
-          </motion.div>
+          </div>
         </div>
       </motion.div>
-
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(15, 23, 42, 0.3);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(100, 116, 139, 0.5);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(148, 163, 184, 0.7);
-        }
-      `}</style>
     </div>
   );
 };
