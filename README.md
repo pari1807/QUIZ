@@ -17,10 +17,6 @@ A comprehensive educational platform with advanced admin features and engaging u
 
 
 
-
-
-
-
 ## ✨ Features
 
 ### 🔥 Admin Features
