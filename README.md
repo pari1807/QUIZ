@@ -1,6 +1,23 @@
 # 🎓 Educational Platform - MERN Stack
 
 A comprehensive educational platform with advanced admin features and engaging user experience, built with the MERN stack.
+<img width="1908" height="951" alt="image" src="https://github.com/user-attachments/assets/3e4da168-6eb1-49ce-944a-9edc4cf2fe91" />
+
+## GITHUB COMMAND
+
+<img width="1402" height="859" alt="image" src="https://github.com/user-attachments/assets/5ffcf651-914b-4af2-ab96-4326f6c9b547" />
+<img width="1217" height="681" alt="image" src="https://github.com/user-attachments/assets/ffaaf3cd-ebc7-41a6-87b8-032b0607ed2d" />
+<img width="1197" height="225" alt="image" src="https://github.com/user-attachments/assets/935cb4a8-61ba-4c79-99b4-bcc58e959ae1" />
+<img width="1860" height="1018" alt="image" src="https://github.com/user-attachments/assets/d32ec34d-ec73-4ffb-8822-a04031efad81" />
+<img width="1860" height="1018" alt="image" src="https://github.com/user-attachments/assets/0bfa0f28-3120-4acf-809e-6360ef0543c1" />
+<img width="1860" height="1018" alt="image" src="https://github.com/user-attachments/assets/69092b16-9314-45a9-9445-3e70ded6be8d" />
+<img width="1860" height="1018" alt="image" src="https://github.com/user-attachments/assets/aa09b13b-de48-49cc-a8f6-d0cb3171f191" />
+
+
+
+
+
+
 
 ## ✨ Features
 
