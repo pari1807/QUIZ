@@ -480,7 +480,7 @@ Weekly reward system
 💥 EXTRA FEATURES (Premium-level additions, agar level upar chahiye)
 AI-Based Features (simple to integrate with OpenAI API)
 
-Auto summary of long note
+
 
 Auto quiz generator from PDFs
 
