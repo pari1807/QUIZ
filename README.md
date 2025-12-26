@@ -1,4 +1,4 @@
-# 🎓 Educational Platform - MERN Stack
+# 🎓 Educational Platform With Quiz - MERN Stack
 
 A comprehensive educational platform with advanced admin features and engaging user experience, built with the MERN stack.
 <img width="1908" height="951" alt="image" src="https://github.com/user-attachments/assets/3e4da168-6eb1-49ce-944a-9edc4cf2fe91" />
