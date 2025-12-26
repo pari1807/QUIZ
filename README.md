@@ -12,6 +12,8 @@ A comprehensive educational platform with advanced admin features and engaging u
 <img width="1860" height="1018" alt="image" src="https://github.com/user-attachments/assets/0bfa0f28-3120-4acf-809e-6360ef0543c1" />
 <img width="1860" height="1018" alt="image" src="https://github.com/user-attachments/assets/69092b16-9314-45a9-9445-3e70ded6be8d" />
 <img width="1860" height="1018" alt="image" src="https://github.com/user-attachments/assets/aa09b13b-de48-49cc-a8f6-d0cb3171f191" />
+<img width="1860" height="1018" alt="image" src="https://github.com/user-attachments/assets/380eeb61-7b26-488c-95d4-76ecd80b3116" />
+
 
 
 
